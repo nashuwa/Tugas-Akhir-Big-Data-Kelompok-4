@@ -1,0 +1,42 @@
+[2025-06-12T09:14:59.688+0000] {taskinstance.py:1103} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: yfinance_pipeline.extract_yfinance manual__2025-06-12T09:14:57.411691+00:00 [queued]>
+[2025-06-12T09:14:59.705+0000] {taskinstance.py:1103} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: yfinance_pipeline.extract_yfinance manual__2025-06-12T09:14:57.411691+00:00 [queued]>
+[2025-06-12T09:14:59.706+0000] {taskinstance.py:1308} INFO - Starting attempt 1 of 2
+[2025-06-12T09:14:59.734+0000] {taskinstance.py:1327} INFO - Executing <Task(DockerOperator): extract_yfinance> on 2025-06-12 09:14:57.411691+00:00
+[2025-06-12T09:14:59.742+0000] {standard_task_runner.py:57} INFO - Started process 323 to run task
+[2025-06-12T09:14:59.747+0000] {standard_task_runner.py:84} INFO - Running: ['***', 'tasks', 'run', 'yfinance_pipeline', 'extract_yfinance', 'manual__2025-06-12T09:14:57.411691+00:00', '--job-id', '28', '--raw', '--subdir', 'DAGS_FOLDER/yfinance_pipeline_dag.py', '--cfg-path', '/tmp/tmpdqmxn1t1']
+[2025-06-12T09:14:59.749+0000] {standard_task_runner.py:85} INFO - Job 28: Subtask extract_yfinance
+[2025-06-12T09:14:59.839+0000] {task_command.py:410} INFO - Running <TaskInstance: yfinance_pipeline.extract_yfinance manual__2025-06-12T09:14:57.411691+00:00 [running]> on host c8950c9ffc98
+[2025-06-12T09:15:00.031+0000] {taskinstance.py:1547} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='***' AIRFLOW_CTX_DAG_ID='yfinance_pipeline' AIRFLOW_CTX_TASK_ID='extract_yfinance' AIRFLOW_CTX_EXECUTION_DATE='2025-06-12T09:14:57.411691+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2025-06-12T09:14:57.411691+00:00'
+[2025-06-12T09:15:00.157+0000] {docker.py:334} INFO - Starting docker container from image yfinance_extraction:latest
+[2025-06-12T09:15:00.211+0000] {taskinstance.py:1824} ERROR - Task failed with exception
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.7/site-packages/docker/api/client.py", line 268, in _raise_for_status
+    response.raise_for_status()
+  File "/home/airflow/.local/lib/python3.7/site-packages/requests/models.py", line 1021, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 409 Client Error: Conflict for url: http+docker://localhost/v1.48/containers/create?name=pipeline_extract_yfinance
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.7/site-packages/airflow/providers/docker/operators/docker.py", line 478, in execute
+    return self._run_image()
+  File "/home/airflow/.local/lib/python3.7/site-packages/airflow/providers/docker/operators/docker.py", line 351, in _run_image
+    return self._run_image_with_mounts(self.mounts, add_tmp_variable=False)
+  File "/home/airflow/.local/lib/python3.7/site-packages/airflow/providers/docker/operators/docker.py", line 393, in _run_image_with_mounts
+    hostname=self.hostname,
+  File "/home/airflow/.local/lib/python3.7/site-packages/docker/api/container.py", line 431, in create_container
+    return self.create_container_from_config(config, name, platform)
+  File "/home/airflow/.local/lib/python3.7/site-packages/docker/api/container.py", line 448, in create_container_from_config
+    return self._result(res, True)
+  File "/home/airflow/.local/lib/python3.7/site-packages/docker/api/client.py", line 274, in _result
+    self._raise_for_status(response)
+  File "/home/airflow/.local/lib/python3.7/site-packages/docker/api/client.py", line 270, in _raise_for_status
+    raise create_api_error_from_http_exception(e) from e
+  File "/home/airflow/.local/lib/python3.7/site-packages/docker/errors.py", line 39, in create_api_error_from_http_exception
+    raise cls(e, response=response, explanation=explanation) from e
+docker.errors.APIError: 409 Client Error for http+docker://localhost/v1.48/containers/create?name=pipeline_extract_yfinance: Conflict ("Conflict. The container name "/pipeline_extract_yfinance" is already in use by container "ed65c7490e77293fb36e4e8f9a9ef250e9265e4978584ec6402efe2acd255258". You have to remove (or rename) that container to be able to reuse that name.")
+[2025-06-12T09:15:00.244+0000] {taskinstance.py:1350} INFO - Marking task as UP_FOR_RETRY. dag_id=yfinance_pipeline, task_id=extract_yfinance, execution_date=20250612T091457, start_date=20250612T091459, end_date=20250612T091500
+[2025-06-12T09:15:00.268+0000] {standard_task_runner.py:109} ERROR - Failed to execute job 28 for task extract_yfinance (409 Client Error for http+docker://localhost/v1.48/containers/create?name=pipeline_extract_yfinance: Conflict ("Conflict. The container name "/pipeline_extract_yfinance" is already in use by container "ed65c7490e77293fb36e4e8f9a9ef250e9265e4978584ec6402efe2acd255258". You have to remove (or rename) that container to be able to reuse that name."); 323)
+[2025-06-12T09:15:00.321+0000] {local_task_job_runner.py:225} INFO - Task exited with return code 1
+[2025-06-12T09:15:00.370+0000] {taskinstance.py:2653} INFO - 0 downstream tasks scheduled from follow-on schedule check

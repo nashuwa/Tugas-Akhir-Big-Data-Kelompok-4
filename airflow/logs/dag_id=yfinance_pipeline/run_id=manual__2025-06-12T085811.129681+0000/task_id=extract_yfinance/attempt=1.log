@@ -1,0 +1,129 @@
+[2025-06-12T08:58:17.018+0000] {taskinstance.py:1103} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: yfinance_pipeline.extract_yfinance manual__2025-06-12T08:58:11.129681+00:00 [queued]>
+[2025-06-12T08:58:17.041+0000] {taskinstance.py:1103} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: yfinance_pipeline.extract_yfinance manual__2025-06-12T08:58:11.129681+00:00 [queued]>
+[2025-06-12T08:58:17.042+0000] {taskinstance.py:1308} INFO - Starting attempt 1 of 2
+[2025-06-12T08:58:17.074+0000] {taskinstance.py:1327} INFO - Executing <Task(DockerOperator): extract_yfinance> on 2025-06-12 08:58:11.129681+00:00
+[2025-06-12T08:58:17.092+0000] {standard_task_runner.py:57} INFO - Started process 149 to run task
+[2025-06-12T08:58:17.132+0000] {standard_task_runner.py:84} INFO - Running: ['***', 'tasks', 'run', 'yfinance_pipeline', 'extract_yfinance', 'manual__2025-06-12T08:58:11.129681+00:00', '--job-id', '21', '--raw', '--subdir', 'DAGS_FOLDER/yfinance_pipeline_dag.py', '--cfg-path', '/tmp/tmpvlxn_loh']
+[2025-06-12T08:58:17.136+0000] {standard_task_runner.py:85} INFO - Job 21: Subtask extract_yfinance
+[2025-06-12T08:58:17.437+0000] {task_command.py:410} INFO - Running <TaskInstance: yfinance_pipeline.extract_yfinance manual__2025-06-12T08:58:11.129681+00:00 [running]> on host c8950c9ffc98
+[2025-06-12T08:58:17.852+0000] {taskinstance.py:1547} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='***' AIRFLOW_CTX_DAG_ID='yfinance_pipeline' AIRFLOW_CTX_TASK_ID='extract_yfinance' AIRFLOW_CTX_EXECUTION_DATE='2025-06-12T08:58:11.129681+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2025-06-12T08:58:11.129681+00:00'
+[2025-06-12T08:58:18.232+0000] {docker.py:334} INFO - Starting docker container from image yfinance_extraction:latest
+[2025-06-12T08:58:22.590+0000] {docker.py:403} INFO - 2025-06-12 08:58:22,587 - __main__ - INFO - ==================================================
+2025-06-12 08:58:22,587 - __main__ - INFO - YFINANCE DATA FETCHER - 5 YEARS HISTORICAL DATA
+2025-06-12 08:58:22,587 - __main__ - INFO - ==================================================
+[2025-06-12T08:58:22.593+0000] {docker.py:403} INFO - 2025-06-12 08:58:22,587 - __main__ - INFO - Fetching data from 2020-06-13 to 2025-06-12
+[2025-06-12T08:58:23.662+0000] {docker.py:403} INFO - 2025-06-12 08:58:23,658 - __main__ - INFO - Successfully loaded 950 tickers from /app/tickers.xlsx
+[2025-06-12T08:58:23.663+0000] {docker.py:403} INFO - 2025-06-12 08:58:23,659 - __main__ - INFO - Processing batch 1: tickers 1-10
+[2025-06-12T08:58:23.667+0000] {docker.py:403} INFO - 2025-06-12 08:58:23,659 - __main__ - INFO - Processing 0/950: AALI.JK
+[2025-06-12T08:58:26.050+0000] {docker.py:403} INFO - 2025-06-12 08:58:26,047 - __main__ - INFO - ✅ Successfully fetched 1199 records for AALI.JK
+[2025-06-12T08:58:27.051+0000] {docker.py:403} INFO - 2025-06-12 08:58:27,048 - __main__ - INFO - Progress: 0/950 processed | Success: 1 | Failed: 0
+2025-06-12 08:58:27,048 - __main__ - INFO - Processing 1/950: ABBA.JK
+[2025-06-12T08:58:27.622+0000] {docker.py:403} INFO - 2025-06-12 08:58:27,620 - __main__ - INFO - ✅ Successfully fetched 1199 records for ABBA.JK
+[2025-06-12T08:58:28.624+0000] {docker.py:403} INFO - 2025-06-12 08:58:28,621 - __main__ - INFO - Processing 2/950: ABDA.JK
+[2025-06-12T08:58:31.319+0000] {docker.py:403} INFO - 2025-06-12 08:58:31,316 - __main__ - INFO - ✅ Successfully fetched 1199 records for ABDA.JK
+[2025-06-12T08:58:32.480+0000] {docker.py:403} INFO - 2025-06-12 08:58:32,477 - __main__ - INFO - Processing 3/950: ABMM.JK
+[2025-06-12T08:58:34.069+0000] {docker.py:403} INFO - 2025-06-12 08:58:33,722 - __main__ - INFO - ✅ Successfully fetched 1199 records for ABMM.JK
+[2025-06-12T08:58:34.725+0000] {docker.py:403} INFO - 2025-06-12 08:58:34,722 - __main__ - INFO - Processing 4/950: ACES.JK
+[2025-06-12T08:58:35.342+0000] {docker.py:403} INFO - 2025-06-12 08:58:35,339 - __main__ - INFO - ✅ Successfully fetched 1199 records for ACES.JK
+[2025-06-12T08:58:36.343+0000] {docker.py:403} INFO - 2025-06-12 08:58:36,339 - __main__ - INFO - Processing 5/950: ACST.JK
+[2025-06-12T08:58:36.851+0000] {docker.py:403} INFO - 2025-06-12 08:58:36,849 - __main__ - INFO - ✅ Successfully fetched 1199 records for ACST.JK
+[2025-06-12T08:58:37.851+0000] {docker.py:403} INFO - 2025-06-12 08:58:37,849 - __main__ - INFO - Processing 6/950: ADES.JK
+[2025-06-12T08:58:38.274+0000] {docker.py:403} INFO - 2025-06-12 08:58:38,272 - __main__ - INFO - ✅ Successfully fetched 1199 records for ADES.JK
+[2025-06-12T08:58:39.277+0000] {docker.py:403} INFO - 2025-06-12 08:58:39,273 - __main__ - INFO - Processing 7/950: ADHI.JK
+[2025-06-12T08:58:39.777+0000] {docker.py:403} INFO - 2025-06-12 08:58:39,774 - __main__ - INFO - ✅ Successfully fetched 1199 records for ADHI.JK
+[2025-06-12T08:58:40.777+0000] {docker.py:403} INFO - 2025-06-12 08:58:40,775 - __main__ - INFO - Processing 8/950: ADMF.JK
+[2025-06-12T08:58:41.296+0000] {docker.py:403} INFO - 2025-06-12 08:58:41,294 - __main__ - INFO - ✅ Successfully fetched 1199 records for ADMF.JK
+[2025-06-12T08:58:42.296+0000] {docker.py:403} INFO - 2025-06-12 08:58:42,294 - __main__ - INFO - Processing 9/950: ADMG.JK
+[2025-06-12T08:58:42.712+0000] {docker.py:403} INFO - 2025-06-12 08:58:42,710 - __main__ - INFO - ✅ Successfully fetched 1199 records for ADMG.JK
+[2025-06-12T08:58:43.759+0000] {docker.py:403} INFO - 2025-06-12 08:58:43,756 - __main__ - INFO - Processing batch 2: tickers 11-20
+2025-06-12 08:58:43,757 - __main__ - INFO - Processing 0/950: ADRO.JK
+[2025-06-12T08:58:44.301+0000] {docker.py:403} INFO - 2025-06-12 08:58:44,299 - __main__ - INFO - ✅ Successfully fetched 1199 records for ADRO.JK
+[2025-06-12T08:58:45.301+0000] {docker.py:403} INFO - 2025-06-12 08:58:45,299 - __main__ - INFO - Progress: 0/950 processed | Success: 11 | Failed: 0
+2025-06-12 08:58:45,299 - __main__ - INFO - Processing 1/950: AGII.JK
+[2025-06-12T08:58:45.802+0000] {docker.py:403} INFO - 2025-06-12 08:58:45,799 - __main__ - INFO - ✅ Successfully fetched 1199 records for AGII.JK
+[2025-06-12T08:58:46.802+0000] {docker.py:403} INFO - 2025-06-12 08:58:46,800 - __main__ - INFO - Processing 2/950: AGRO.JK
+[2025-06-12T08:58:47.352+0000] {docker.py:403} INFO - 2025-06-12 08:58:47,349 - __main__ - INFO - ✅ Successfully fetched 1199 records for AGRO.JK
+[2025-06-12T08:58:48.352+0000] {docker.py:403} INFO - 2025-06-12 08:58:48,350 - __main__ - INFO - Processing 3/950: AGRS.JK
+[2025-06-12T08:58:48.835+0000] {docker.py:403} INFO - 2025-06-12 08:58:48,833 - __main__ - INFO - ✅ Successfully fetched 1199 records for AGRS.JK
+[2025-06-12T08:58:49.836+0000] {docker.py:403} INFO - 2025-06-12 08:58:49,833 - __main__ - INFO - Processing 4/950: AHAP.JK
+[2025-06-12T08:58:50.744+0000] {docker.py:403} INFO - 2025-06-12 08:58:50,635 - __main__ - INFO - ✅ Successfully fetched 1199 records for AHAP.JK
+[2025-06-12T08:58:51.693+0000] {docker.py:403} INFO - 2025-06-12 08:58:51,636 - __main__ - INFO - Processing 5/950: AIMS.JK
+[2025-06-12T08:58:52.358+0000] {docker.py:403} INFO - 2025-06-12 08:58:52,356 - __main__ - INFO - ✅ Successfully fetched 1199 records for AIMS.JK
+[2025-06-12T08:58:53.358+0000] {docker.py:403} INFO - 2025-06-12 08:58:53,356 - __main__ - INFO - Processing 6/950: AISA.JK
+[2025-06-12T08:58:54.250+0000] {docker.py:403} INFO - 2025-06-12 08:58:54,248 - __main__ - INFO - ✅ Successfully fetched 1199 records for AISA.JK
+[2025-06-12T08:58:56.953+0000] {docker.py:403} INFO - 2025-06-12 08:58:56,950 - __main__ - INFO - Processing 7/950: AKKU.JK
+[2025-06-12T08:58:58.500+0000] {docker.py:403} INFO - 2025-06-12 08:58:58,201 - __main__ - INFO - ✅ Successfully fetched 1199 records for AKKU.JK
+[2025-06-12T08:58:59.740+0000] {docker.py:403} INFO - 2025-06-12 08:58:59,201 - __main__ - INFO - Processing 8/950: AKPI.JK
+[2025-06-12T08:59:01.222+0000] {docker.py:403} INFO - 2025-06-12 08:59:01,219 - __main__ - INFO - ✅ Successfully fetched 1199 records for AKPI.JK
+[2025-06-12T08:59:02.222+0000] {docker.py:403} INFO - 2025-06-12 08:59:02,219 - __main__ - INFO - Processing 9/950: AKRA.JK
+[2025-06-12T08:59:03.767+0000] {docker.py:403} INFO - 2025-06-12 08:59:03,765 - __main__ - INFO - ✅ Successfully fetched 1199 records for AKRA.JK
+[2025-06-12T08:59:04.808+0000] {docker.py:403} INFO - 2025-06-12 08:59:04,806 - __main__ - INFO - Processing batch 3: tickers 21-30
+2025-06-12 08:59:04,806 - __main__ - INFO - Processing 0/950: AKSI.JK
+[2025-06-12T08:59:05.833+0000] {docker.py:403} INFO - 2025-06-12 08:59:05,831 - __main__ - INFO - ✅ Successfully fetched 1199 records for AKSI.JK
+[2025-06-12T08:59:06.835+0000] {docker.py:403} INFO - 2025-06-12 08:59:06,832 - __main__ - INFO - Progress: 0/950 processed | Success: 21 | Failed: 0
+2025-06-12 08:59:06,832 - __main__ - INFO - Processing 1/950: ALDO.JK
+[2025-06-12T08:59:07.349+0000] {docker.py:403} INFO - 2025-06-12 08:59:07,340 - __main__ - INFO - ✅ Successfully fetched 1199 records for ALDO.JK
+[2025-06-12T08:59:08.343+0000] {docker.py:403} INFO - 2025-06-12 08:59:08,340 - __main__ - INFO - Processing 2/950: ALKA.JK
+[2025-06-12T08:59:08.787+0000] {docker.py:403} INFO - 2025-06-12 08:59:08,785 - __main__ - INFO - ✅ Successfully fetched 1199 records for ALKA.JK
+[2025-06-12T08:59:09.787+0000] {docker.py:403} INFO - 2025-06-12 08:59:09,785 - __main__ - INFO - Processing 3/950: ALMI.JK
+[2025-06-12T08:59:10.269+0000] {docker.py:403} INFO - 2025-06-12 08:59:10,266 - __main__ - INFO - ✅ Successfully fetched 1199 records for ALMI.JK
+[2025-06-12T08:59:11.269+0000] {docker.py:403} INFO - 2025-06-12 08:59:11,267 - __main__ - INFO - Processing 4/950: ALTO.JK
+[2025-06-12T08:59:11.708+0000] {docker.py:403} INFO - 2025-06-12 08:59:11,706 - __main__ - INFO - ✅ Successfully fetched 1199 records for ALTO.JK
+[2025-06-12T08:59:12.710+0000] {docker.py:403} INFO - 2025-06-12 08:59:12,706 - __main__ - INFO - Processing 5/950: AMAG.JK
+[2025-06-12T08:59:13.181+0000] {docker.py:403} INFO - 2025-06-12 08:59:13,179 - __main__ - INFO - ✅ Successfully fetched 1199 records for AMAG.JK
+[2025-06-12T08:59:14.181+0000] {docker.py:403} INFO - 2025-06-12 08:59:14,179 - __main__ - INFO - Processing 6/950: AMFG.JK
+[2025-06-12T08:59:14.752+0000] {docker.py:403} INFO - 2025-06-12 08:59:14,750 - __main__ - INFO - ✅ Successfully fetched 1199 records for AMFG.JK
+[2025-06-12T08:59:15.753+0000] {docker.py:403} INFO - 2025-06-12 08:59:15,750 - __main__ - INFO - Processing 7/950: AMIN.JK
+[2025-06-12T08:59:16.252+0000] {docker.py:403} INFO - 2025-06-12 08:59:16,249 - __main__ - INFO - ✅ Successfully fetched 1199 records for AMIN.JK
+[2025-06-12T08:59:17.252+0000] {docker.py:403} INFO - 2025-06-12 08:59:17,250 - __main__ - INFO - Processing 8/950: AMRT.JK
+[2025-06-12T08:59:17.786+0000] {docker.py:403} INFO - 2025-06-12 08:59:17,784 - __main__ - INFO - ✅ Successfully fetched 1199 records for AMRT.JK
+[2025-06-12T08:59:18.787+0000] {docker.py:403} INFO - 2025-06-12 08:59:18,784 - __main__ - INFO - Processing 9/950: ANJT.JK
+[2025-06-12T08:59:19.351+0000] {docker.py:403} INFO - 2025-06-12 08:59:19,348 - __main__ - INFO - ✅ Successfully fetched 1199 records for ANJT.JK
+[2025-06-12T08:59:20.397+0000] {docker.py:403} INFO - 2025-06-12 08:59:20,395 - __main__ - INFO - Processing batch 4: tickers 31-40
+2025-06-12 08:59:20,395 - __main__ - INFO - Processing 0/950: ANTM.JK
+[2025-06-12T08:59:21.511+0000] {docker.py:403} INFO - 2025-06-12 08:59:21,509 - __main__ - INFO - ✅ Successfully fetched 1199 records for ANTM.JK
+[2025-06-12T08:59:22.512+0000] {docker.py:403} INFO - 2025-06-12 08:59:22,509 - __main__ - INFO - Progress: 0/950 processed | Success: 31 | Failed: 0
+2025-06-12 08:59:22,510 - __main__ - INFO - Processing 1/950: APEX.JK
+[2025-06-12T08:59:23.846+0000] {docker.py:403} INFO - 2025-06-12 08:59:23,844 - __main__ - INFO - ✅ Successfully fetched 1199 records for APEX.JK
+[2025-06-12T08:59:24.846+0000] {docker.py:403} INFO - 2025-06-12 08:59:24,844 - __main__ - INFO - Processing 2/950: APIC.JK
+[2025-06-12T08:59:25.329+0000] {docker.py:403} INFO - 2025-06-12 08:59:25,327 - __main__ - INFO - ✅ Successfully fetched 1199 records for APIC.JK
+[2025-06-12T08:59:26.330+0000] {docker.py:403} INFO - 2025-06-12 08:59:26,327 - __main__ - INFO - Processing 3/950: APII.JK
+[2025-06-12T08:59:28.367+0000] {docker.py:403} INFO - 2025-06-12 08:59:28,365 - __main__ - INFO - ✅ Successfully fetched 1199 records for APII.JK
+[2025-06-12T08:59:29.368+0000] {docker.py:403} INFO - 2025-06-12 08:59:29,366 - __main__ - INFO - Processing 4/950: APLI.JK
+[2025-06-12T08:59:29.839+0000] {docker.py:403} INFO - 2025-06-12 08:59:29,837 - __main__ - INFO - ✅ Successfully fetched 1199 records for APLI.JK
+[2025-06-12T08:59:30.840+0000] {docker.py:403} INFO - 2025-06-12 08:59:30,837 - __main__ - INFO - Processing 5/950: APLN.JK
+[2025-06-12T08:59:31.272+0000] {docker.py:403} INFO - 2025-06-12 08:59:31,270 - __main__ - INFO - ✅ Successfully fetched 1199 records for APLN.JK
+[2025-06-12T08:59:32.272+0000] {docker.py:403} INFO - 2025-06-12 08:59:32,270 - __main__ - INFO - Processing 6/950: ARGO.JK
+[2025-06-12T08:59:32.687+0000] {docker.py:403} INFO - 2025-06-12 08:59:32,685 - __main__ - INFO - ✅ Successfully fetched 1199 records for ARGO.JK
+[2025-06-12T08:59:33.688+0000] {docker.py:403} INFO - 2025-06-12 08:59:33,685 - __main__ - INFO - Processing 7/950: ARII.JK
+[2025-06-12T08:59:34.130+0000] {docker.py:403} INFO - 2025-06-12 08:59:34,128 - __main__ - INFO - ✅ Successfully fetched 1199 records for ARII.JK
+[2025-06-12T08:59:35.130+0000] {docker.py:403} INFO - 2025-06-12 08:59:35,128 - __main__ - INFO - Processing 8/950: ARNA.JK
+[2025-06-12T08:59:35.659+0000] {docker.py:403} INFO - 2025-06-12 08:59:35,657 - __main__ - INFO - ✅ Successfully fetched 1199 records for ARNA.JK
+[2025-06-12T08:59:36.660+0000] {docker.py:403} INFO - 2025-06-12 08:59:36,657 - __main__ - INFO - Processing 9/950: ARTA.JK
+[2025-06-12T08:59:37.200+0000] {docker.py:403} INFO - 2025-06-12 08:59:37,198 - __main__ - INFO - ✅ Successfully fetched 1199 records for ARTA.JK
+[2025-06-12T08:59:38.260+0000] {docker.py:403} INFO - 2025-06-12 08:59:38,258 - __main__ - INFO - Processing batch 5: tickers 41-50
+2025-06-12 08:59:38,258 - __main__ - INFO - Processing 0/950: ARTI.JK
+[2025-06-12T08:59:38.719+0000] {docker.py:403} INFO - 2025-06-12 08:59:38,717 - __main__ - INFO - ✅ Successfully fetched 1199 records for ARTI.JK
+[2025-06-12T08:59:39.721+0000] {docker.py:403} INFO - 2025-06-12 08:59:39,717 - __main__ - INFO - Progress: 0/950 processed | Success: 41 | Failed: 0
+[2025-06-12T08:59:39.722+0000] {docker.py:403} INFO - 2025-06-12 08:59:39,718 - __main__ - INFO - Processing 1/950: ARTO.JK
+[2025-06-12T08:59:40.266+0000] {docker.py:403} INFO - 2025-06-12 08:59:40,263 - __main__ - INFO - ✅ Successfully fetched 1199 records for ARTO.JK
+[2025-06-12T08:59:41.266+0000] {docker.py:403} INFO - 2025-06-12 08:59:41,264 - __main__ - INFO - Processing 2/950: ASBI.JK
+[2025-06-12T08:59:42.062+0000] {docker.py:403} INFO - 2025-06-12 08:59:42,058 - __main__ - INFO - ✅ Successfully fetched 1199 records for ASBI.JK
+[2025-06-12T08:59:43.060+0000] {docker.py:403} INFO - 2025-06-12 08:59:43,058 - __main__ - INFO - Processing 3/950: ASDM.JK
+[2025-06-12T08:59:43.598+0000] {docker.py:403} INFO - 2025-06-12 08:59:43,596 - __main__ - INFO - ✅ Successfully fetched 1199 records for ASDM.JK
+[2025-06-12T08:59:44.598+0000] {docker.py:403} INFO - 2025-06-12 08:59:44,597 - __main__ - INFO - Processing 4/950: ASGR.JK
+[2025-06-12T08:59:45.189+0000] {docker.py:403} INFO - 2025-06-12 08:59:45,186 - __main__ - INFO - ✅ Successfully fetched 1199 records for ASGR.JK
+[2025-06-12T08:59:46.190+0000] {docker.py:403} INFO - 2025-06-12 08:59:46,187 - __main__ - INFO - Processing 5/950: ASII.JK
+[2025-06-12T08:59:46.933+0000] {docker.py:403} INFO - 2025-06-12 08:59:46,929 - __main__ - INFO - ✅ Successfully fetched 1199 records for ASII.JK
+[2025-06-12T08:59:47.932+0000] {docker.py:403} INFO - 2025-06-12 08:59:47,930 - __main__ - INFO - Processing 6/950: ASJT.JK
+[2025-06-12T08:59:48.422+0000] {docker.py:403} INFO - 2025-06-12 08:59:48,420 - __main__ - INFO - ✅ Successfully fetched 1199 records for ASJT.JK
+[2025-06-12T08:59:49.423+0000] {docker.py:403} INFO - 2025-06-12 08:59:49,420 - __main__ - INFO - Processing 7/950: ASMI.JK
+[2025-06-12T08:59:49.819+0000] {docker.py:403} INFO - 2025-06-12 08:59:49,816 - __main__ - INFO - ✅ Successfully fetched 1199 records for ASMI.JK
+[2025-06-12T08:59:50.820+0000] {docker.py:403} INFO - 2025-06-12 08:59:50,817 - __main__ - INFO - Processing 8/950: ASRI.JK
+[2025-06-12T08:59:51.291+0000] {docker.py:403} INFO - 2025-06-12 08:59:51,289 - __main__ - INFO - ✅ Successfully fetched 1199 records for ASRI.JK
+[2025-06-12T08:59:51.495+0000] {local_task_job_runner.py:292} WARNING - State of this instance has been externally set to success. Terminating instance.
+[2025-06-12T08:59:51.501+0000] {process_utils.py:135} INFO - Sending Signals.SIGTERM to group 149. PIDs of all processes in the group: [149]
+[2025-06-12T08:59:51.502+0000] {process_utils.py:86} INFO - Sending the signal Signals.SIGTERM to group 149
+[2025-06-12T08:59:51.503+0000] {taskinstance.py:1517} ERROR - Received SIGTERM. Terminating subprocesses.
+[2025-06-12T08:59:51.503+0000] {docker.py:495} INFO - Stopping docker container
+[2025-06-12T09:00:03.914+0000] {process_utils.py:79} INFO - Process psutil.Process(pid=149, status='terminated', exitcode=0, started='08:58:16') (149) terminated with exit code 0
