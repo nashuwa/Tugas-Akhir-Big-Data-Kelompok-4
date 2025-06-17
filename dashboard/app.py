@@ -1,19 +1,10 @@
 from flask import Flask, jsonify, render_template
 # from pymongo import MongoClient
-from db import collection_yfinance
+from db import collection_yfinance, collection_idx
 from bson.json_util import dumps
 
 app = Flask(__name__)
 
-# # Koneksi ke MongoDB
-# client = MongoClient("mongodb+srv://bigdatakecil:bigdata04@xtrahera.m7x7qad.mongodb.net/?retryWrites=true&w=majority&appName=xtrahera")
-# db_idx = client["tugas_bigdata"]
-# collection_idx = db_idx["idx"]
-
-# # db_yfinance = client["yfinance"]
-# collection_yfinance = db_idx["yfinance_data_lima_tahun"]
-
-# Route untuk halaman utama (tampilkan data dengan grafik)
 @app.route("/")
 def index():
     return render_template("index.html")
