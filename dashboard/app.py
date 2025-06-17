@@ -1,16 +1,17 @@
 from flask import Flask, jsonify, render_template
-from pymongo import MongoClient
+# from pymongo import MongoClient
+from db import collection_yfinance
 from bson.json_util import dumps
 
 app = Flask(__name__)
 
-# Koneksi ke MongoDB
-client = MongoClient("mongodb+srv://bigdatakecil:bigdata04@xtrahera.m7x7qad.mongodb.net/?retryWrites=true&w=majority&appName=xtrahera")
-db_idx = client["tugas_bigdata"]
-collection_idx = db_idx["idx"]
+# # Koneksi ke MongoDB
+# client = MongoClient("mongodb+srv://bigdatakecil:bigdata04@xtrahera.m7x7qad.mongodb.net/?retryWrites=true&w=majority&appName=xtrahera")
+# db_idx = client["tugas_bigdata"]
+# collection_idx = db_idx["idx"]
 
-# db_yfinance = client["yfinance"]
-collection_stocks = db_idx["yfinance_data_lima_tahun"]
+# # db_yfinance = client["yfinance"]
+# collection_yfinance = db_idx["yfinance_data_lima_tahun"]
 
 # Route untuk halaman utama (tampilkan data dengan grafik)
 @app.route("/")
@@ -19,7 +20,7 @@ def index():
 
 @app.route("/api/tickers")
 def get_tickers():
-    tickers = collection_stocks.distinct("ticker")
+    tickers = collection_yfinance.distinct("ticker")
     return jsonify(tickers)
 
 @app.route('/idx')
@@ -52,7 +53,7 @@ def get_stock_data(ticker):
     # Ambil 3 tahun terakhir
     three_years_ago = datetime.now() - relativedelta(years=5)
     
-    data = collection_stocks.find(
+    data = collection_yfinance.find(
         {"ticker": ticker, "Bulan": {"$gte": three_years_ago}},
         {"_id": 0, "Bulan": 1, "Open": 1, "High": 1, "Low": 1, "Close": 1, "Volume": 1}
     ).sort("Bulan", 1)
@@ -72,7 +73,7 @@ def get_stock_data(ticker):
 
 @app.route("/api/stock/latest/<ticker>")
 def get_latest_stock(ticker):
-    latest_data = collection_stocks.find_one(
+    latest_data = collection_yfinance.find_one(
         {"ticker": ticker},
         {"_id": 0, "Bulan": 1, "Open": 1, "High": 1, "Low": 1, "Close": 1},
         sort=[("Bulan", -1)]
