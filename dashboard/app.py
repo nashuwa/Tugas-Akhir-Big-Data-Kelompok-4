@@ -139,7 +139,7 @@ def get_top_growth():
     return jsonify({
         "data": top_growth,
         "years": distinct_years
-    })
+})
 
 # API untuk mendapatkan top 5 emiten berdasarkan net profit
 @app.route("/api/top-profit")
