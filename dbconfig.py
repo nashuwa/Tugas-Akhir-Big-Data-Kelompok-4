@@ -1,9 +1,6 @@
 import os
 from pymongo import MongoClient
 
-#koneksi ke MongoDB
-# client = MongoClient("mongodb+srv://bigdatakecil:bigdata04@xtrahera.m7x7qad.mongodb.net/?retryWrites=true&w=majority&appName=xtrahera")
-
 # Koneksi ke MongoDB - pakai environment variable
 MONGODB_URI = os.getenv('MONGODB_URI', 'mongodb+srv://bigdatakecil:bigdata04@xtrahera.m7x7qad.mongodb.net/?retryWrites=true&w=majority&appName=xtrahera')
 client = MongoClient(MONGODB_URI)

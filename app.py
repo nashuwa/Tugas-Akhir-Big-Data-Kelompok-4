@@ -1,7 +1,7 @@
 import os
 from flask import Flask, jsonify, render_template, request
 # from pymongo import MongoClient
-from db import collection_yfinance, collection_idx, collection_market_news
+from dbconfig import collection_yfinance, collection_idx, collection_market_news
 from bson.json_util import dumps
 
 app = Flask(__name__)
