@@ -19,6 +19,11 @@ def get_tickers():
 def idx():
     return render_template('idx/index.html', active_page='idx')
 
+# Route untuk halaman top revenue
+@app.route('/idx/top-revenue')
+def idx_top_revenue():
+    return render_template('idx/top_revenue.html', active_page='idx')
+
 # API untuk ambil data yang akan dipakai di grafik
 @app.route("/api/emiten")
 def get_emiten():
@@ -292,7 +297,7 @@ def get_latest_stock(ticker):
         return jsonify(latest_data)
     else:
         return jsonify({"error": "Data not found"}), 404
-    
+
 # API untuk mendapatkan top 5 emiten dengan DER terendah per sektor
 @app.route("/api/top-der")
 def get_top_der():
