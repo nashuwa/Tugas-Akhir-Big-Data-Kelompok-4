@@ -302,6 +302,7 @@ def get_latest_stock(ticker):
 def get_top_der():
     # Ambil parameter sektor dari query string
     sector = request.args.get('sector')
+    year = int(request.args.get('year', 2021))
     
     if not sector:
         return jsonify({"error": "Sector parameter is required"}), 400
@@ -310,9 +311,9 @@ def get_top_der():
     pipeline = [
         {"$match": {
             "sector": {"$regex": sector, "$options": "i"},  # Case insensitive search
-            "short_term_borrowing.current_year": {"$ne": None},
-            "long_term_borrowing.current_year": {"$ne": None},
-            "equity.current_year": {"$ne": None, "$gt": 0}  # Pastikan equity positif untuk menghindari DER negatif
+            "short_term_borrowing.current_year": {"$exists": True, "$ne": None},
+            "long_term_borrowing.current_year": {"$exists": True, "$ne": None},
+            "equity.current_year": {"$exists": True, "$ne": None, "$gt": 0}  # Pastikan equity positif untuk menghindari DER negatif
         }},
         # Group berdasarkan company_code untuk menghindari duplikasi
         {"$group": {
@@ -332,7 +333,8 @@ def get_top_der():
                     {"$add": ["$short_term_borrowing", "$long_term_borrowing"]},
                     "$equity"
                 ]
-            }
+            },
+            "total_debt": {"$add": ["$short_term_borrowing", "$long_term_borrowing"]}
         }},
         {"$sort": {"der": 1}},  # Urutkan dari terendah (terbaik)
         {"$limit": 5},
@@ -341,16 +343,17 @@ def get_top_der():
             "emiten": 1,
             "company_code": 1,
             "sector": 1,
-            "der": 1,
-            "reporting_year": 1
+            "calculated_ratios": {
+                "debt_to_equity": "$der"  # Agar kompatibel dengan template
+            },
+            "total_debt": 1, 
+            "equity": {"current_year": "$equity"}  # Restruktur untuk kompatibilitas template
         }}
     ]
     
     top_der = list(collection_idx.aggregate(pipeline))
     
-    return jsonify({
-        "data": top_der
-    })
+    return jsonify(top_der)
 
 # API untuk mendapatkan DER emiten dan rata-rata sektor
 @app.route("/api/emiten-der")
@@ -486,7 +489,9 @@ def compare_der():
     emiten_data = collection_idx.find_one({
         "company_code": emiten_code,
         "reporting_year": year,
-        "calculated_ratios.debt_to_equity": {"$exists": True}
+        "short_term_borrowing.current_year": {"$exists": True},
+        "long_term_borrowing.current_year": {"$exists": True},
+        "equity.current_year": {"$exists": True, "$gt": 0}
     })
     
     if not emiten_data:
@@ -495,19 +500,41 @@ def compare_der():
     # Ambil sektor dari emiten yang dipilih
     sector = emiten_data.get("sector")
     
-    # Hitung rata-rata DER sektor
+    # Hitung DER untuk emiten yang dipilih
+    short_term = emiten_data.get("short_term_borrowing", {}).get("current_year", 0) or 0
+    long_term = emiten_data.get("long_term_borrowing", {}).get("current_year", 0) or 0
+    equity = emiten_data.get("equity", {}).get("current_year", 0) or 0
+    
+    emiten_der = None
+    if equity > 0:
+        emiten_der = (short_term + long_term) / equity
+    
+    # Pipeline aggregation untuk menghitung rata-rata DER sektor
     pipeline = [
         {"$match": {
             "sector": sector,
-            "reporting_year": year,
-            "calculated_ratios.debt_to_equity": {"$exists": True, "$ne": None},
-            "calculated_ratios.debt_to_equity": {"$gt": 0}  # Pastikan DER positif
+            "short_term_borrowing.current_year": {"$ne": None},
+            "long_term_borrowing.current_year": {"$ne": None},
+            "equity.current_year": {"$ne": None, "$gt": 0},  # Pastikan equity positif
+            "reporting_year": year
         }},
         # Group berdasarkan company_code untuk menghindari duplikasi
         {"$group": {
             "_id": "$company_code",
-            "der": {"$first": "$calculated_ratios.debt_to_equity"}
+            "short_term_borrowing": {"$first": "$short_term_borrowing.current_year"},
+            "long_term_borrowing": {"$first": "$long_term_borrowing.current_year"},
+            "equity": {"$first": "$equity.current_year"}
         }},
+        # Tambahkan field DER dengan perhitungan
+        {"$addFields": {
+            "der": {
+                "$divide": [
+                    {"$add": ["$short_term_borrowing", "$long_term_borrowing"]},
+                    "$equity"
+                ]
+            }
+        }},
+        # Hitung rata-rata DER
         {"$group": {
             "_id": None,
             "avg_der": {"$avg": "$der"},
@@ -527,12 +554,65 @@ def compare_der():
         "company_code": emiten_code,
         "emiten_name": emiten_data.get("emiten"),
         "sector": sector,
-        "emiten_der": emiten_data.get("calculated_ratios", {}).get("debt_to_equity"),
+        "emiten_der": emiten_der,
         "sector_avg_der": sector_avg_der,
         "total_emiten": total_emiten
     }
     
     return jsonify(result)
+
+# API untuk mendapatkan top 5 emiten dengan aset terbesar per sektor
+@app.route("/api/top-assets")
+def get_top_assets():
+    # Ambil parameter sektor dari query string
+    sector = request.args.get('sector')
+    year = int(request.args.get('year', 2021))
+    
+    if not sector:
+        return jsonify({"error": "Sector parameter is required"}), 400
+    
+    # Pipeline aggregation untuk mendapatkan top 5 dengan aset terbesar berdasarkan sektor
+    pipeline = [
+        {"$match": {
+            "sector": {"$regex": sector, "$options": "i"},  # Case insensitive search
+            "assets.current_year": {"$exists": True, "$ne": None},
+            "reporting_year": year
+        }},
+        # Group berdasarkan company_code untuk menghindari duplikasi
+        {"$group": {
+            "_id": "$company_code",
+            "emiten": {"$first": "$emiten"},
+            "company_code": {"$first": "$company_code"},
+            "sector": {"$first": "$sector"},
+            "assets": {"$first": "$assets"},
+            "reporting_year": {"$first": "$reporting_year"}
+        }},
+        {"$sort": {"assets.current_year": -1}},  # Urutkan dari terbesar
+        {"$limit": 5},
+        {"$project": {
+            "_id": 0,
+            "emiten": 1,
+            "company_code": 1,
+            "sector": 1,
+            "assets": 1,
+            "reporting_year": 1
+        }}
+    ]
+    
+    top_assets = list(collection_idx.aggregate(pipeline))
+    
+    # Mendapatkan daftar tahun unik untuk dropdown
+    distinct_years = sorted(collection_idx.distinct("reporting_year"))
+    
+    return jsonify({
+        "data": top_assets,
+        "years": distinct_years
+    })
+
+# Route untuk halaman top assets
+@app.route('/idx/top-assets')
+def idx_top_assets():
+    return render_template('idx/top_assets.html', active_page='idx')
 
 # Jalankan Flask
 if __name__ == "__main__":
