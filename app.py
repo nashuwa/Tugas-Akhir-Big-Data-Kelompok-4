@@ -3,6 +3,8 @@ from flask import Flask, jsonify, render_template, request
 # from pymongo import MongoClient
 from dbconfig import collection_yfinance, collection_idx, collection_market_news
 from bson.json_util import dumps
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 
 app = Flask(__name__)
 
@@ -258,45 +260,43 @@ def idx_revenue():
 def yfinance():
     return render_template('yfinance/3y.html', active_page='yfinance')
 
-@app.route("/api/stock/<ticker>")
-def get_stock_data(ticker):
-    from datetime import datetime, timedelta
-    from dateutil.relativedelta import relativedelta
+# @app.route("/api/stock/<ticker>")
+# def get_stock_data(ticker):
 
-    # Ambil 3 tahun terakhir
-    three_years_ago = datetime.now() - relativedelta(years=5)
+#     # Ambil 3 tahun terakhir
+#     three_years_ago = datetime.now() - relativedelta(years=5)
     
-    data = collection_yfinance.find(
-        {"ticker": ticker, "Bulan": {"$gte": three_years_ago}},
-        {"_id": 0, "Bulan": 1, "Open": 1, "High": 1, "Low": 1, "Close": 1, "Volume": 1}
-    ).sort("Bulan", 1)
+#     data = collection_yfinance.find(
+#         {"ticker": ticker, "Bulan": {"$gte": three_years_ago}},
+#         {"_id": 0, "Bulan": 1, "Open": 1, "High": 1, "Low": 1, "Close": 1, "AvgVolume": 1}
+#     ).sort("Bulan", 1)
 
-    # Format Bulan jadi string
-    result = [
-        {
-            "Bulan": d["Bulan"].strftime("%Y-%m-%d"),
-            "close": d["Close"],
-            "volume": d["Volume"],
-            "open" : d["Open"],
-            "high" : d["High"],
-            "low" : d["Low"]
-        } for d in data
-    ]
-    return jsonify(result)
+#     # Format Bulan jadi string
+#     result = [
+#         {
+#             "Bulan": d["Bulan"].strftime("%Y-%m-%d"),
+#             "close": d["Close"],
+#             "volume": d["AvgVolume"],
+#             "open" : d["Open"],
+#             "high" : d["High"],
+#             "low" : d["Low"]
+#         } for d in data
+#     ]
+#     return jsonify(result)
 
-@app.route("/api/stock/latest/<ticker>")
-def get_latest_stock(ticker):
-    latest_data = collection_yfinance.find_one(
-        {"ticker": ticker},
-        {"_id": 0, "Bulan": 1, "Open": 1, "High": 1, "Low": 1, "Close": 1},
-        sort=[("Bulan", -1)]
-    )
+# @app.route("/api/stock/latest/<ticker>")
+# def get_latest_stock(ticker):
+#     latest_data = collection_yfinance.find_one(
+#         {"ticker": ticker},
+#         {"_id": 0, "Bulan": 1, "Open": 1, "High": 1, "Low": 1, "Close": 1, "AvgVolume": 1},
+#         sort=[("Bulan", -1)]
+#     )
 
-    if latest_data:
-        latest_data["Bulan"] = latest_data["Bulan"].strftime("%Y-%m-%d")
-        return jsonify(latest_data)
-    else:
-        return jsonify({"error": "Data not found"}), 404
+#     if latest_data:
+#         latest_data["Bulan"] = latest_data["Bulan"].strftime("%Y-%m-%d")
+#         return jsonify(latest_data)
+#     else:
+#         return jsonify({"error": "Data not found"}), 404
 
 # API untuk mendapatkan top 5 emiten dengan DER terendah per sektor
 @app.route("/api/top-der")
@@ -610,6 +610,36 @@ def get_top_assets():
         "years": distinct_years
     })
 
+@app.route("/api/stock/<ticker>")
+def get_stock_data(ticker):
+    data = collection_yfinance.find(
+        {"ticker": ticker},
+        {
+            "_id": 0,
+            "Bulan": 1,
+            "Open": 1,
+            "Close": 1,
+            "Low": 1,
+            "High": 1,
+            "AvgVolume": 1,
+            "MaxVolume": 1
+        }
+    ).sort("Bulan", 1)
+
+    result = [
+        {
+            "Bulan": d["Bulan"],
+            "open": d.get("Open", 0),
+            "close": d.get("Close", 0),
+            "high": d.get("High", 0),
+            "low": d.get("Low", 0),
+            "avgVolume": d.get("AvgVolume", 0),
+            "maxVolume": d.get("MaxVolume", 0)
+        }
+        for d in data
+    ]
+    return jsonify(result)
+
 # Route untuk halaman top assets
 @app.route('/idx/top-assets')
 def idx_top_assets():
@@ -621,16 +651,27 @@ def market_news():
 
 @app.route("/api/market_news")
 def get_market_news():
-    data = collection_market_news.find({}, {
-        "_id": 0,
-        "judul": 1,
-        "tanggal_artikel": 1,
-        "link": 1,
-        "ringkasan": 1
-    }).sort("tanggal_artikel", -1)
-    
-    # Menggunakan dumps untuk mengonversi BSON ke JSON
-    return dumps(data)
+    # Ambil data dari MongoDB, tanpa _id, diurutkan dari tanggal terbaru
+    data = collection_market_news.find(
+        {
+            "_id": 0,
+            "judul": 1,
+            "tanggal_artikel": 1,
+            "link": 1,
+            "ringkasan": 1
+        }
+    ).sort("tanggal_artikel", -1)
+
+    # Ubah ke list dan return sebagai JSON
+    return jsonify({
+        "data": dumps(data)  # Menggunakan dumps untuk mengubah BSON ke JSON
+    })
+
+@app.route("/api/test")
+def test_data():
+    data = list(collection_market_news.find())
+    print(data)  # buat debug di terminal
+    return jsonify(data)
 
 # Jalankan Flask
 if __name__ == "__main__":
