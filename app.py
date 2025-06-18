@@ -616,7 +616,7 @@ def get_stock_data(ticker):
         {"ticker": ticker},
         {
             "_id": 0,
-            "Bulan": 1,
+            "StartDate": 1,
             "Open": 1,
             "Close": 1,
             "Low": 1,
@@ -624,20 +624,26 @@ def get_stock_data(ticker):
             "AvgVolume": 1,
             "MaxVolume": 1
         }
-    ).sort("Bulan", 1)
+    ).sort("StartDate", 1)
 
-    result = [
-        {
-            "Bulan": d["Bulan"],
+    result = []
+    for d in data:
+        start_date = d.get("StartDate", "")
+        if isinstance(start_date, datetime):
+            start_date = start_date.strftime("%Y-%m-%d")
+        elif isinstance(start_date, str) and "T" in start_date:
+            start_date = start_date.split("T")[0]
+
+        result.append({
+            "StartDate": start_date,
             "open": d.get("Open", 0),
             "close": d.get("Close", 0),
             "high": d.get("High", 0),
             "low": d.get("Low", 0),
             "avgVolume": d.get("AvgVolume", 0),
             "maxVolume": d.get("MaxVolume", 0)
-        }
-        for d in data
-    ]
+        })
+
     return jsonify(result)
 
 # Route untuk halaman top assets

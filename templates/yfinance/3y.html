@@ -1,144 +1,122 @@
 {% extends 'index.html' %}
 
 {% block content %}
-<main class="flex-1 p-8 overflow-auto">
-  <div>
-    <h2 class="text-2xl font-semibold text-gray-800 mb-4">Grafik Saham</h2>
+<main class="p-8">
+  <h2 class="text-2xl font-bold text-gray-800 mb-4">Grafik Saham</h2>
 
-    <!-- Dropdown pilih ticker -->
-    <label for="ticker-select" class="block text-sm mb-2">Pilih Ticker:</label>
-    <select id="ticker-select" class="p-2 border rounded mb-4">
-      <option value="">-- Pilih Ticker --</option>
-    </select>
+  <!-- Dropdown Ticker -->
+  <label for="ticker-select" class="block text-gray-700 mb-2">Pilih Ticker:</label>
+  <select id="ticker-select" class="w-full max-w-sm p-2 border border-gray-300 rounded mb-6">
+    <option value="">-- Pilih Ticker --</option>
+  </select>
 
-    <!-- Chart -->
-    <div class="w-full h-[500px]">
-      <canvas id="stockChart"></canvas>
-    </div>
+  <!-- Grafik Harga -->
+  <div class="bg-white rounded shadow mb-10 p-4">
+    <h3 class="text-lg font-semibold mb-2 text-gray-700">Harga Saham</h3>
+    <canvas id="priceChart" class="w-full h-[400px]"></canvas>
+  </div>
+
+  <!-- Grafik Volume -->
+  <div class="bg-white rounded shadow p-4">
+    <h3 class="text-lg font-semibold mb-2 text-gray-700">Volume Saham</h3>
+    <canvas id="volumeChart" class="w-full h-[300px]"></canvas>
   </div>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-  const select = document.getElementById("ticker-select");
-  const ctx = document.getElementById("stockChart").getContext("2d");
-  let chart;
+  const tickerSelect = document.getElementById("ticker-select");
+  let priceChart, volumeChart;
 
-  // Fetch list ticker
+  // Ambil semua ticker
   fetch("/api/tickers")
     .then(res => res.json())
-    .then(data => {
-      data.forEach(ticker => {
+    .then(tickers => {
+      tickers.forEach(ticker => {
         const opt = document.createElement("option");
         opt.value = ticker;
         opt.textContent = ticker;
-        select.appendChild(opt);
+        tickerSelect.appendChild(opt);
       });
     });
 
-  // Fetch & tampilkan grafik saat ticker dipilih
-  select.addEventListener("change", () => {
-    const ticker = select.value;
+  tickerSelect.addEventListener("change", () => {
+    const ticker = tickerSelect.value;
     if (!ticker) return;
 
     fetch(`/api/stock/${ticker}`)
       .then(res => res.json())
       .then(data => {
-        const labels = data.map(d => d.Bulan);
+        const labels = data.map(d => d.StartDate);
         const open = data.map(d => d.open);
         const close = data.map(d => d.close);
         const high = data.map(d => d.high);
         const low = data.map(d => d.low);
-        const avgVolume = data.map(d => d.avgVolume);
-        const maxVolume = data.map(d => d.maxVolume);
+        const avgVol = data.map(d => d.avgVolume);
+        const maxVol = data.map(d => d.maxVolume);
 
-        if (chart) chart.destroy();
-
-        chart = new Chart(ctx, {
-          type: "bar",
+        // Harga Chart
+        if (priceChart) priceChart.destroy();
+        priceChart = new Chart(document.getElementById("priceChart"), {
+          type: 'line',
           data: {
             labels,
             datasets: [
-              {
-                type: "line",
-                label: "Open",
-                data: open,
-                borderColor: "blue",
-                borderWidth: 2,
-                fill: false,
-                yAxisID: "y",
-              },
-              {
-                type: "line",
-                label: "Close",
-                data: close,
-                borderColor: "green",
-                borderWidth: 2,
-                fill: false,
-                yAxisID: "y",
-              },
-              {
-                type: "line",
-                label: "High",
-                data: high,
-                borderColor: "orange",
-                borderWidth: 2,
-                fill: false,
-                yAxisID: "y",
-              },
-              {
-                type: "line",
-                label: "Low",
-                data: low,
-                borderColor: "red",
-                borderWidth: 2,
-                fill: false,
-                yAxisID: "y",
-              },
-              {
-                type: "bar",
-                label: "Avg Volume",
-                data: avgVolume,
-                backgroundColor: "rgba(100, 100, 255, 0.4)",
-                yAxisID: "y1"
-              },
-              {
-                type: "bar",
-                label: "Max Volume",
-                data: maxVolume,
-                backgroundColor: "rgba(150, 150, 150, 0.4)",
-                yAxisID: "y1"
-              }
+              { label: "Open", data: open, borderColor: "orange", fill: false },
+              { label: "Close", data: close, borderColor: "blue", fill: false },
+              { label: "High", data: high, borderColor: "green", fill: false },
+              { label: "Low", data: low, borderColor: "red", fill: false }
             ]
           },
           options: {
             responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-              y: {
-                type: "linear",
-                position: "left",
-                title: { display: true, text: "Harga (Open, Close, etc)" }
-              },
-              y1: {
-                type: "linear",
-                position: "right",
-                grid: { drawOnChartArea: false },
-                title: { display: true, text: "Volume" }
-              },
-              x: {
-                ticks: { maxTicksLimit: 12 },
-              }
-            },
             plugins: {
-              tooltip: { mode: "index", intersect: false },
-              legend: { position: "top" }
+              title: { display: false }
+            },
+            scales: {
+              x: {
+                ticks: {
+                  maxTicksLimit: 10
+                },
+                title: { display: true, text: "Tanggal" }
+              },
+              y: {
+                title: { display: true, text: "Harga" }
+              }
+            }
+          }
+        });
+
+        // Volume Chart
+        if (volumeChart) volumeChart.destroy();
+        volumeChart = new Chart(document.getElementById("volumeChart"), {
+          type: 'bar',
+          data: {
+            labels,
+            datasets: [
+              { label: "AvgVolume", data: avgVol, backgroundColor: "gray" },
+              { label: "MaxVolume", data: maxVol, backgroundColor: "black" }
+            ]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              title: { display: false }
+            },
+            scales: {
+              x: {
+                ticks: {
+                  maxTicksLimit: 10
+                },
+                title: { display: true, text: "Tanggal" }
+              },
+              y: {
+                title: { display: true, text: "Volume" }
+              }
             }
           }
         });
       });
   });
-});
 </script>
 {% endblock %}
