@@ -80,8 +80,7 @@ def get_top_revenue():
     return jsonify({
         "data": top_emiten,
         "years": distinct_years
-    })
-
+})
 @app.route('/idx/financial-ratios')
 def idx_financial_ratios():
     return render_template('idx/financial_ratios.html', active_page='idx')
