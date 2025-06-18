@@ -29,7 +29,7 @@
   let priceChart, volumeChart;
 
   // Ambil semua ticker
-  fetch("/api/tickers")
+  fetch("/api/tickers/5tahun")
     .then(res => res.json())
     .then(tickers => {
       tickers.forEach(ticker => {
@@ -44,7 +44,7 @@
     const ticker = tickerSelect.value;
     if (!ticker) return;
 
-    fetch(`/api/stock/${ticker}`)
+    fetch(`/api/stock/5tahun/${ticker}`)
       .then(res => res.json())
       .then(data => {
         const labels = data.map(d => d.StartDate);

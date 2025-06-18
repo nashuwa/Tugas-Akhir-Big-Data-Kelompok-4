@@ -1,7 +1,7 @@
 import os
 from flask import Flask, jsonify, render_template, request
 # from pymongo import MongoClient
-from dbconfig import collection_yfinance, collection_idx, collection_market_news
+from dbconfig import collection_yfinance_5tahun, collection_idx, collection_market_news
 from bson.json_util import dumps
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
@@ -10,16 +10,12 @@ app = Flask(__name__)
 
 @app.route("/")
 def index():
-    return render_template("yfinance/3y.html")
+    # return render_template("yfinance/5y.html")
+    return render_template('idx/top_revenue.html', active_page='idx')
 
-@app.route("/api/tickers")
-def get_tickers():
-    tickers = collection_yfinance.distinct("ticker")
-    return jsonify(tickers)
-
-@app.route('/idx')
-def idx():
-    return render_template('idx/index.html', active_page='idx')
+# @app.route('/idx')
+# def idx():
+#     return render_template('idx/index.html', active_page='idx')
 
 # Route untuk halaman top revenue
 @app.route('/idx/top-revenue')
@@ -255,48 +251,6 @@ def idx_top_profit():
 @app.route('/idx/revenue')
 def idx_revenue():
     return render_template('idx/revenue.html', active_page='idx')
-
-@app.route('/yfinance')
-def yfinance():
-    return render_template('yfinance/3y.html', active_page='yfinance')
-
-# @app.route("/api/stock/<ticker>")
-# def get_stock_data(ticker):
-
-#     # Ambil 3 tahun terakhir
-#     three_years_ago = datetime.now() - relativedelta(years=5)
-    
-#     data = collection_yfinance.find(
-#         {"ticker": ticker, "Bulan": {"$gte": three_years_ago}},
-#         {"_id": 0, "Bulan": 1, "Open": 1, "High": 1, "Low": 1, "Close": 1, "AvgVolume": 1}
-#     ).sort("Bulan", 1)
-
-#     # Format Bulan jadi string
-#     result = [
-#         {
-#             "Bulan": d["Bulan"].strftime("%Y-%m-%d"),
-#             "close": d["Close"],
-#             "volume": d["AvgVolume"],
-#             "open" : d["Open"],
-#             "high" : d["High"],
-#             "low" : d["Low"]
-#         } for d in data
-#     ]
-#     return jsonify(result)
-
-# @app.route("/api/stock/latest/<ticker>")
-# def get_latest_stock(ticker):
-#     latest_data = collection_yfinance.find_one(
-#         {"ticker": ticker},
-#         {"_id": 0, "Bulan": 1, "Open": 1, "High": 1, "Low": 1, "Close": 1, "AvgVolume": 1},
-#         sort=[("Bulan", -1)]
-#     )
-
-#     if latest_data:
-#         latest_data["Bulan"] = latest_data["Bulan"].strftime("%Y-%m-%d")
-#         return jsonify(latest_data)
-#     else:
-#         return jsonify({"error": "Data not found"}), 404
 
 # API untuk mendapatkan top 5 emiten dengan DER terendah per sektor
 @app.route("/api/top-der")
@@ -610,9 +564,18 @@ def get_top_assets():
         "years": distinct_years
     })
 
-@app.route("/api/stock/<ticker>")
-def get_stock_data(ticker):
-    data = collection_yfinance.find(
+@app.route('/yfinance/5tahun')
+def yfinance_lima_tahun():
+    return render_template('yfinance/5y.html', active_page='yfinance')
+
+@app.route("/api/tickers/5tahun")
+def get_tickers_lima_tahun():
+    tickers = collection_yfinance_5tahun.distinct("ticker")
+    return jsonify(tickers)
+
+@app.route("/api/stock/5tahun/<ticker>")
+def get_stock_data_lima_tahun(ticker):
+    data = collection_yfinance_5tahun.find(
         {"ticker": ticker},
         {
             "_id": 0,
