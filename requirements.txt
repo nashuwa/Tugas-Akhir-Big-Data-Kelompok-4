@@ -3,3 +3,4 @@ pymongo
 dnspython
 gunicorn
 python-dotenv
+python-dateutil
