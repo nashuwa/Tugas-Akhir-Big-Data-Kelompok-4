@@ -8,7 +8,7 @@ app = Flask(__name__)
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template("yfinance/3y.html")
 
 @app.route("/api/tickers")
 def get_tickers():
