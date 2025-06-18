@@ -82,6 +82,21 @@ def get_top_revenue():
         "years": distinct_years
     })
 
+@app.route('/idx/financial-ratios')
+def idx_financial_ratios():
+    return render_template('idx/financial_ratios.html', active_page='idx')
+
+# Route untuk halaman Long-Term Borrowing
+@app.route('/idx/long-term-borrowing')
+def idx_long_term_borrowing():
+    return render_template('idx/long_term_borrowing.html', active_page='idx')
+
+# Route untuk halaman Equity Trend
+@app.route('/idx/equity-trend')
+def idx_equity_trend():
+    return render_template('idx/equity_trend.html', active_page='idx')
+
+
 # API untuk mendapatkan top 5 emiten berdasarkan growth rate
 @app.route("/api/top-growth")
 def get_top_growth():
@@ -180,21 +195,39 @@ def get_available_years():
 # API untuk mendapatkan daftar sektor
 @app.route("/api/sectors")
 def get_sectors():
-    sectors = [
-        'Agriculture',
-        'Energy',
-        'Basic Materials',
-        'Industrials',
-        'Consumer Non-Cyclicals',
-        'Consumer Cyclicals',
-        'Healthcare',
-        'Financials',
-        'Properties & Real Estate',
-        'Technology',
-        'Infrastructures',
-        'Transportation & Logistic'
-    ]
-    return jsonify(sectors)
+    try:
+        # Get distinct sectors from database
+        sectors = sorted(collection_idx.distinct("sector"))
+        return jsonify(sectors)
+    except Exception as e:
+        # Fallback to hardcoded sectors if database fails
+        sectors = [
+            'Agriculture',
+            'Energy',
+            'Basic Materials',
+            'Industrials',
+            'Consumer Non-Cyclicals',
+            'Consumer Cyclicals',
+            'Healthcare',
+            'Financials',
+            'Properties & Real Estate',
+            'Technology',
+            'Infrastructures',
+            'Transportation & Logistic'
+        ]
+        return jsonify(sectors)
+
+# API untuk mendapatkan daftar tahun
+@app.route("/api/years")
+def get_years():
+    try:
+        # Get distinct years from database
+        years = sorted(collection_idx.distinct("reporting_year"), reverse=True)
+        return jsonify(years)
+    except Exception as e:
+        # Fallback to hardcoded years if database fails
+        years = [2023, 2022, 2021, 2020]
+        return jsonify(years)
 
 # API untuk mendapatkan data pertumbuhan sektor
 @app.route("/api/sector-growth")
@@ -611,9 +644,414 @@ def get_top_assets():
 
 # Route untuk halaman top assets
 @app.route('/idx/top-assets')
-def idx_top_assets():
-    return render_template('idx/top_assets.html', active_page='idx')
+def idx_top_assets():    return render_template('idx/top_assets.html', active_page='idx')
 
+# API untuk Financial Ratios Analysis (ROE, ROA, NPM)
+@app.route("/api/financial-ratios-data")
+def get_financial_ratios_data():
+    sector = request.args.get('sector')
+    year = int(request.args.get('year', 2021))
+    
+    # Pipeline untuk menghitung financial ratios
+    pipeline = [
+        {"$match": {
+            "net_profit.current_year": {"$exists": True, "$ne": None},
+            "equity.current_year": {"$exists": True, "$ne": None, "$gt": 0},
+            "assets.current_year": {"$exists": True, "$ne": None, "$gt": 0},
+            "revenue.current_year": {"$exists": True, "$ne": None, "$gt": 0},
+            "reporting_year": year
+        }}
+    ]
+    
+    # Add sector filter if provided
+    if sector:
+        pipeline[0]["$match"]["sector"] = {"$regex": sector, "$options": "i"}
+    
+    # Add aggregation stages
+    pipeline.extend([
+        {"$group": {
+            "_id": "$company_code",
+            "emiten": {"$first": "$emiten"},
+            "company_code": {"$first": "$company_code"},
+            "sector": {"$first": "$sector"},
+            "net_profit": {"$first": "$net_profit.current_year"},
+            "equity": {"$first": "$equity.current_year"},
+            "assets": {"$first": "$assets.current_year"},
+            "revenue": {"$first": "$revenue.current_year"},
+            "reporting_year": {"$first": "$reporting_year"}
+        }},
+        {"$addFields": {
+            "roe": {
+                "$cond": {
+                    "if": {"$and": [
+                        {"$ne": ["$equity", 0]},
+                        {"$ne": ["$equity", None]},
+                        {"$ne": ["$net_profit", None]}
+                    ]},
+                    "then": {"$multiply": [{"$divide": ["$net_profit", "$equity"]}, 100]},
+                    "else": None
+                }
+            },
+            "roa": {
+                "$cond": {
+                    "if": {"$and": [
+                        {"$ne": ["$assets", 0]},
+                        {"$ne": ["$assets", None]},
+                        {"$ne": ["$net_profit", None]}
+                    ]},
+                    "then": {"$multiply": [{"$divide": ["$net_profit", "$assets"]}, 100]},
+                    "else": None
+                }
+            },
+            "npm": {
+                "$cond": {
+                    "if": {"$and": [
+                        {"$ne": ["$revenue", 0]},
+                        {"$ne": ["$revenue", None]},
+                        {"$ne": ["$net_profit", None]}
+                    ]},
+                    "then": {"$multiply": [{"$divide": ["$net_profit", "$revenue"]}, 100]},
+                    "else": None
+                }
+            }
+        }},
+        {"$match": {
+            "$or": [
+                {"roe": {"$ne": None}},
+                {"roa": {"$ne": None}},
+                {"npm": {"$ne": None}}
+            ]
+        }},
+        {"$sort": {"roe": -1}},
+        {"$project": {
+            "_id": 0,
+            "emiten": 1,
+            "company_code": 1,
+            "sector": 1,
+            "roe": 1,
+            "roa": 1,
+            "npm": 1,
+            "net_profit": 1,
+            "equity": 1,
+            "assets": 1,
+            "revenue": 1,
+            "reporting_year": 1
+        }}
+    ])
+    
+    ratios_data = list(collection_idx.aggregate(pipeline))
+    return jsonify(ratios_data)
+
+# API untuk perbandingan financial ratios antar sektor
+@app.route('/api/compare-financial-ratios')
+def compare_financial_ratios():
+    year = int(request.args.get('year', 2021))
+    
+    pipeline = [
+        {"$match": {
+            "net_profit.current_year": {"$exists": True, "$ne": None},
+            "equity.current_year": {"$exists": True, "$ne": None, "$gt": 0},
+            "assets.current_year": {"$exists": True, "$ne": None, "$gt": 0},
+            "revenue.current_year": {"$exists": True, "$ne": None, "$gt": 0},
+            "reporting_year": year
+        }},
+        {"$group": {
+            "_id": "$company_code",
+            "sector": {"$first": "$sector"},
+            "net_profit": {"$first": "$net_profit.current_year"},
+            "equity": {"$first": "$equity.current_year"},
+            "assets": {"$first": "$assets.current_year"},
+            "revenue": {"$first": "$revenue.current_year"}
+        }},
+        {"$addFields": {
+            "roe": {
+                "$cond": {
+                    "if": {"$and": [
+                        {"$ne": ["$equity", 0]},
+                        {"$ne": ["$equity", None]},
+                        {"$ne": ["$net_profit", None]}
+                    ]},
+                    "then": {"$multiply": [{"$divide": ["$net_profit", "$equity"]}, 100]},
+                    "else": None
+                }
+            },
+            "roa": {
+                "$cond": {
+                    "if": {"$and": [
+                        {"$ne": ["$assets", 0]},
+                        {"$ne": ["$assets", None]},
+                        {"$ne": ["$net_profit", None]}
+                    ]},
+                    "then": {"$multiply": [{"$divide": ["$net_profit", "$assets"]}, 100]},
+                    "else": None
+                }
+            },
+            "npm": {
+                "$cond": {
+                    "if": {"$and": [
+                        {"$ne": ["$revenue", 0]},
+                        {"$ne": ["$revenue", None]},
+                        {"$ne": ["$net_profit", None]}
+                    ]},
+                    "then": {"$multiply": [{"$divide": ["$net_profit", "$revenue"]}, 100]},
+                    "else": None
+                }
+            }
+        }},
+        {"$group": {
+            "_id": "$sector",
+            "sector": {"$first": "$sector"},
+            "avg_roe": {"$avg": "$roe"},
+            "avg_roa": {"$avg": "$roa"},
+            "avg_npm": {"$avg": "$npm"},
+            "company_count": {"$sum": 1}
+        }},
+        {"$match": {
+            "company_count": {"$gte": 2}  # Minimal 2 perusahaan per sektor
+        }},
+        {"$sort": {"avg_roe": -1}},        {"$project": {
+            "_id": 0,
+            "sector": 1,
+            "avg_roe": {"$round": ["$avg_roe", 2]},
+            "avg_roa": {"$round": ["$avg_roa", 2]},
+            "avg_npm": {"$round": ["$avg_npm", 2]},
+            "company_count": 1
+        }}
+    ]
+    
+    comparison_data = list(collection_idx.aggregate(pipeline))
+    return jsonify(comparison_data)
+
+# API untuk Long-Term Borrowing Analysis
+@app.route("/api/long-term-borrowing-data")
+def get_long_term_borrowing_data():
+    sector = request.args.get('sector')
+    year = int(request.args.get('year', 2022))
+    
+    # Pipeline untuk menghitung long-term borrowing trends
+    pipeline = [
+        {"$match": {
+            "long_term_borrowing.current_year": {"$exists": True, "$ne": None},
+            "reporting_year": year
+        }}
+    ]
+    
+    # Add sector filter if provided
+    if sector:
+        pipeline[0]["$match"]["sector"] = {"$regex": sector, "$options": "i"}
+    
+    # Add aggregation stages
+    pipeline.extend([
+        {"$group": {
+            "_id": "$company_code",
+            "emiten": {"$first": "$emiten"},
+            "company_code": {"$first": "$company_code"},
+            "sector": {"$first": "$sector"},
+            "long_term_borrowing_current": {"$first": "$long_term_borrowing.current_year"},
+            "long_term_borrowing_prior": {"$first": "$long_term_borrowing.prior_year"},
+            "growth_rate_existing": {"$first": "$long_term_borrowing.growth_rate_percent"},
+            "reporting_year": {"$first": "$reporting_year"}
+        }},
+        {"$addFields": {
+            "growth_rate": {
+                "$cond": {
+                    "if": {"$ne": ["$growth_rate_existing", None]},
+                    "then": "$growth_rate_existing",
+                    "else": {
+                        "$cond": {
+                            "if": {"$and": [
+                                {"$ne": ["$long_term_borrowing_prior", 0]},
+                                {"$ne": ["$long_term_borrowing_prior", None]},
+                                {"$ne": ["$long_term_borrowing_current", None]}
+                            ]},
+                            "then": {
+                                "$multiply": [
+                                    {"$divide": [
+                                        {"$subtract": ["$long_term_borrowing_current", "$long_term_borrowing_prior"]},
+                                        "$long_term_borrowing_prior"
+                                    ]}, 100
+                                ]
+                            },
+                            "else": None
+                        }
+                    }
+                }
+            }
+        }},
+        {"$sort": {"long_term_borrowing_current": -1}},
+        {"$project": {
+            "_id": 0,
+            "emiten": 1,
+            "company_code": 1,
+            "sector": 1,
+            "long_term_borrowing_current": 1,
+            "long_term_borrowing_prior": 1,
+            "growth_rate": 1,
+            "reporting_year": 1
+        }}
+    ])
+    
+    borrowing_data = list(collection_idx.aggregate(pipeline))
+    return jsonify(borrowing_data)
+
+# API untuk Equity Trend Analysis
+@app.route("/api/equity-trend-data")
+def get_equity_trend_data():
+    sector = request.args.get('sector')
+    year = int(request.args.get('year', 2022))
+    
+    # Pipeline untuk menghitung equity trends
+    pipeline = [
+        {"$match": {
+            "equity.current_year": {"$exists": True, "$ne": None},
+            "reporting_year": year
+        }}
+    ]
+    
+    # Add sector filter if provided
+    if sector:
+        pipeline[0]["$match"]["sector"] = {"$regex": sector, "$options": "i"}
+    
+    # Add aggregation stages
+    pipeline.extend([
+        {"$group": {
+            "_id": "$company_code",
+            "emiten": {"$first": "$emiten"},
+            "company_code": {"$first": "$company_code"},
+            "sector": {"$first": "$sector"},
+            "equity_current": {"$first": "$equity.current_year"},
+            "equity_prior": {"$first": "$equity.prior_year"},
+            "growth_rate_existing": {"$first": "$equity.growth_rate_percent"},
+            "reporting_year": {"$first": "$reporting_year"}
+        }},
+        {"$addFields": {
+            "growth_rate": {
+                "$cond": {
+                    "if": {"$ne": ["$growth_rate_existing", None]},
+                    "then": "$growth_rate_existing",
+                    "else": {
+                        "$cond": {
+                            "if": {"$and": [
+                                {"$ne": ["$equity_prior", 0]},
+                                {"$ne": ["$equity_prior", None]},
+                                {"$ne": ["$equity_current", None]}
+                            ]},
+                            "then": {
+                                "$multiply": [
+                                    {"$divide": [
+                                        {"$subtract": ["$equity_current", "$equity_prior"]},
+                                        "$equity_prior"
+                                    ]}, 100
+                                ]
+                            },
+                            "else": None
+                        }
+                    }
+                }
+            }
+        }},
+        {"$sort": {"equity_current": -1}},
+        {"$project": {
+            "_id": 0,
+            "emiten": 1,
+            "company_code": 1,
+            "sector": 1,
+            "equity_current": 1,
+            "equity_prior": 1,
+            "growth_rate": 1,
+            "reporting_year": 1
+        }}
+    ])
+    
+    equity_data = list(collection_idx.aggregate(pipeline))
+    return jsonify(equity_data)
+
+# API untuk perbandingan long-term borrowing antar sektor
+@app.route('/api/compare-long-term-borrowing')
+def compare_long_term_borrowing():
+    year = int(request.args.get('year', 2022))
+    
+    pipeline = [
+        {"$match": {
+            "long_term_borrowing.current_year": {"$exists": True, "$ne": None},
+            "reporting_year": year
+        }},
+        {"$group": {
+            "_id": "$sector",
+            "sector": {"$first": "$sector"},
+            "total_companies": {"$sum": 1},
+            "avg_debt": {"$avg": "$long_term_borrowing.current_year"},
+            "total_debt": {"$sum": "$long_term_borrowing.current_year"},
+            "max_debt": {"$max": "$long_term_borrowing.current_year"},
+            "min_debt": {"$min": "$long_term_borrowing.current_year"}
+        }},
+        {"$sort": {"total_debt": -1}},
+        {"$project": {
+            "_id": 0,
+            "sector": 1,
+            "total_companies": 1,
+            "avg_debt": 1,
+            "total_debt": 1,
+            "max_debt": 1,
+            "min_debt": 1
+        }}
+    ]
+    
+    comparison_data = list(collection_idx.aggregate(pipeline))
+    return jsonify(comparison_data)
+
+# API untuk perbandingan equity antar sektor
+@app.route('/api/compare-equity-trend')
+def compare_equity_trend():
+    year = int(request.args.get('year', 2022))
+    
+    pipeline = [
+        {"$match": {
+            "equity.current_year": {"$exists": True, "$ne": None},
+            "reporting_year": year
+        }},
+        {"$group": {
+            "_id": "$sector",
+            "sector": {"$first": "$sector"},
+            "total_companies": {"$sum": 1},
+            "avg_equity": {"$avg": "$equity.current_year"},
+            "total_equity": {"$sum": "$equity.current_year"},
+            "max_equity": {"$max": "$equity.current_year"},
+            "min_equity": {"$min": "$equity.current_year"},
+            "avg_growth": {"$avg": {
+                "$cond": {
+                    "if": {"$and": [
+                        {"$ne": ["$equity.prior_year", 0]},
+                        {"$ne": ["$equity.prior_year", None]},
+                        {"$ne": ["$equity.current_year", None]}
+                    ]},
+                    "then": {
+                        "$multiply": [
+                            {"$divide": [
+                                {"$subtract": ["$equity.current_year", "$equity.prior_year"]},
+                                "$equity.prior_year"
+                            ]}, 100
+                        ]
+                    },
+                    "else": None
+                }
+            }}
+        }},
+        {"$sort": {"total_equity": -1}},
+        {"$project": {
+            "_id": 0,
+            "sector": 1,
+            "total_companies": 1,
+            "avg_equity": 1,
+            "total_equity": 1,
+            "max_equity": 1,
+            "min_equity": 1,
+            "avg_growth": 1
+        }}
+    ]
+    
+    comparison_data = list(collection_idx.aggregate(pipeline))
+    return jsonify(comparison_data)
 # Jalankan Flask
 if __name__ == "__main__":
     app.run(debug=True)
