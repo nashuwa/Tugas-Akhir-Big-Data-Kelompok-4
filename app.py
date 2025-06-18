@@ -767,6 +767,132 @@ def get_stock_data_tahunan(ticker):
 
     return jsonify(result)
 
+# Route halaman grafik bulanan
+@app.route('/yfinance/bulanan')
+def yfinance_bulanan():
+    return render_template('yfinance/bulanan.html', active_page='yfinance')
+
+# API: Ambil daftar ticker unik untuk data bulanan
+@app.route("/api/tickers/bulanan")
+def get_tickers_bulanan():
+    tickers = collection_yfinance_bulanan.distinct("ticker")
+    return jsonify(tickers)
+
+# API: Ambil data saham berdasarkan ticker (grafik bulanan)
+@app.route("/api/stock/bulanan/<ticker>")
+def get_stock_data_bulanan(ticker):
+    data = collection_yfinance_bulanan.find(
+        {"ticker": ticker},
+        {
+            "_id": 0,
+            "Bulan": 1,
+            "Open": 1,
+            "Close": 1,
+            "Low": 1,
+            "High": 1,
+            "AvgVolume": 1,
+            "MaxVolume": 1
+        }
+    ).sort("Bulan", 1)
+
+    result = []
+    for d in data:
+        result.append({
+            "Bulan": d.get("Bulan", ""),
+            "open": d.get("Open", 0),
+            "close": d.get("Close", 0),
+            "high": d.get("High", 0),
+            "low": d.get("Low", 0),
+            "avgVolume": d.get("AvgVolume", 0),
+            "maxVolume": d.get("MaxVolume", 0)
+        })
+
+    return jsonify(result)
+
+# Route halaman mingguan
+@app.route('/yfinance/mingguan')
+def yfinance_mingguan():
+    return render_template('yfinance/mingguan.html', active_page='yfinance')
+
+# API ambil ticker unik dari data mingguan
+@app.route("/api/tickers/mingguan")
+def get_tickers_mingguan():
+    tickers = collection_yfinance_mingguan.distinct("ticker")
+    return jsonify(tickers)
+
+# API ambil data saham mingguan berdasarkan ticker
+@app.route("/api/stock/mingguan/<ticker>")
+def get_stock_data_mingguan(ticker):
+    data = collection_yfinance_mingguan.find(
+        {"ticker": ticker},
+        {
+            "_id": 0,
+            "Bulan": 1,
+            "Open": 1,
+            "Close": 1,
+            "Low": 1,
+            "High": 1,
+            "AvgVolume": 1,
+            "MaxVolume": 1
+        }
+    ).sort("Bulan", 1)
+
+    result = []
+    for d in data:
+        result.append({
+            "Bulan": d.get("Bulan", ""),  # format "2020-W25"
+            "open": d.get("Open", 0),
+            "close": d.get("Close", 0),
+            "high": d.get("High", 0),
+            "low": d.get("Low", 0),
+            "avgVolume": d.get("AvgVolume", 0),
+            "maxVolume": d.get("MaxVolume", 0)
+        })
+
+    return jsonify(result)
+
+# Route halaman grafik harian
+@app.route('/yfinance/harian')
+def yfinance_harian():
+    return render_template('yfinance/harian.html', active_page='yfinance')
+
+# API: Ambil semua ticker unik dari data harian
+@app.route("/api/tickers/harian")
+def get_tickers_harian():
+    tickers = collection_yfinance_harian.distinct("ticker")
+    return jsonify(tickers)
+
+# API: Ambil data harian berdasarkan ticker
+@app.route("/api/stock/harian/<ticker>")
+def get_stock_data_harian(ticker):
+    data = collection_yfinance_harian.find(
+        {"ticker": ticker},
+        {
+            "_id": 0,
+            "Bulan": 1,  # format "2020-06-18"
+            "Open": 1,
+            "Close": 1,
+            "Low": 1,
+            "High": 1,
+            "AvgVolume": 1,
+            "MaxVolume": 1
+        }
+    ).sort("Bulan", 1)
+
+    result = []
+    for d in data:
+        result.append({
+            "Bulan": d.get("Bulan", ""),
+            "open": d.get("Open", 0),
+            "close": d.get("Close", 0),
+            "high": d.get("High", 0),
+            "low": d.get("Low", 0),
+            "avgVolume": d.get("AvgVolume", 0),
+            "maxVolume": d.get("MaxVolume", 0)
+        })
+
+    return jsonify(result)
+
 @app.route('/market_news')
 def market_news():
     return render_template('iqplus/market.html', active_page='market_news')
