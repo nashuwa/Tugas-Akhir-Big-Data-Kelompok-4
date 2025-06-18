@@ -1,7 +1,7 @@
 import os
 from flask import Flask, jsonify, render_template, request
 # from pymongo import MongoClient
-from dbconfig import collection_yfinance_5tahun, collection_idx, collection_market_news
+from dbconfig import collection_yfinance_5tahun, collection_yfinance_3tahun, collection_yfinance_1tahun, collection_yfinance_tahunan, collection_yfinance_bulanan, collection_yfinance_mingguan, collection_yfinance_harian, collection_idx, collection_market_news
 from bson.json_util import dumps
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
@@ -564,15 +564,23 @@ def get_top_assets():
         "years": distinct_years
     })
 
+# Route untuk halaman top assets
+@app.route('/idx/top-assets')
+def idx_top_assets():
+    return render_template('idx/top_assets.html', active_page='idx')
+
+# Route untuk halaman yfinance 5 tahun
 @app.route('/yfinance/5tahun')
 def yfinance_lima_tahun():
     return render_template('yfinance/5y.html', active_page='yfinance')
 
+# API untuk mendapatkan daftar ticker yang tersedia untuk 5 tahun
 @app.route("/api/tickers/5tahun")
 def get_tickers_lima_tahun():
     tickers = collection_yfinance_5tahun.distinct("ticker")
     return jsonify(tickers)
 
+# API untuk mendapatkan data saham 5 tahun berdasarkan ticker
 @app.route("/api/stock/5tahun/<ticker>")
 def get_stock_data_lima_tahun(ticker):
     data = collection_yfinance_5tahun.find(
@@ -609,10 +617,155 @@ def get_stock_data_lima_tahun(ticker):
 
     return jsonify(result)
 
-# Route untuk halaman top assets
-@app.route('/idx/top-assets')
-def idx_top_assets():
-    return render_template('idx/top_assets.html', active_page='idx')
+# Route untuk halaman yfinance 3 tahun
+@app.route('/yfinance/3tahun')
+def yfinance_tiga_tahun():
+    return render_template('yfinance/3y.html', active_page='yfinance')
+
+# API untuk mendapatkan daftar ticker yang tersedia untuk 3 tahun
+@app.route("/api/tickers/3tahun")
+def get_tickers_tiga_tahun():
+    tickers = collection_yfinance_3tahun.distinct("ticker")
+    return jsonify(tickers)
+
+# API untuk mendapatkan data saham 3 tahun berdasarkan ticker
+@app.route("/api/stock/3tahun/<ticker>")
+def get_stock_data_tiga_tahun(ticker):
+    # Ambil semua data dulu
+    data = collection_yfinance_3tahun.find(
+        {"ticker": ticker},
+        {
+            "_id": 0,
+            "StartDate": 1,
+            "Open": 1,
+            "Close": 1,
+            "Low": 1,
+            "High": 1,
+            "AvgVolume": 1,
+            "MaxVolume": 1
+        }
+    ).sort("StartDate", 1)
+
+    tiga_tahun_lalu = datetime.now() - relativedelta(years=3)
+
+    result = []
+    for d in data:
+        start_date_str = d.get("StartDate", "")
+        try:
+            # Ubah string ke datetime
+            start_date = datetime.strptime(start_date_str.split("T")[0], "%Y-%m-%d")
+        except Exception:
+            continue  # skip kalau format salah
+
+        # Filter hanya data 3 tahun terakhir
+        if start_date >= tiga_tahun_lalu:
+            result.append({
+                "StartDate": start_date.strftime("%Y-%m-%d"),
+                "open": d.get("Open", 0),
+                "close": d.get("Close", 0),
+                "high": d.get("High", 0),
+                "low": d.get("Low", 0),
+                "avgVolume": d.get("AvgVolume", 0),
+                "maxVolume": d.get("MaxVolume", 0)
+            })
+
+    return jsonify(result)
+
+# Route untuk halaman yfinance 1 tahun
+@app.route('/yfinance/1tahun')
+def yfinance_satu_tahun():
+    return render_template('yfinance/1y.html', active_page='yfinance')
+
+# API untuk mendapatkan daftar ticker yang tersedia untuk 1 tahun
+@app.route("/api/tickers/1tahun")
+def get_tickers_satu_tahun():
+    tickers = collection_yfinance_1tahun.distinct("ticker")
+    return jsonify(tickers)
+
+# API untuk mendapatkan data saham 1 tahun berdasarkan ticker
+@app.route("/api/stock/1tahun/<ticker>")
+def get_stock_data_satu_tahun(ticker):
+    # Ambil semua data dulu
+    data = collection_yfinance_1tahun.find(
+        {"ticker": ticker},
+        {
+            "_id": 0,
+            "StartDate": 1,
+            "Open": 1,
+            "Close": 1,
+            "Low": 1,
+            "High": 1,
+            "AvgVolume": 1,
+            "MaxVolume": 1
+        }
+    ).sort("StartDate", 1)
+
+    tiga_tahun_lalu = datetime.now() - relativedelta(years=1)
+
+    result = []
+    for d in data:
+        start_date_str = d.get("StartDate", "")
+        try:
+            # Ubah string ke datetime
+            start_date = datetime.strptime(start_date_str.split("T")[0], "%Y-%m-%d")
+        except Exception:
+            continue  # skip kalau format salah
+
+        # Filter hanya data 1 tahun terakhir
+        if start_date >= tiga_tahun_lalu:
+            result.append({
+                "StartDate": start_date.strftime("%Y-%m-%d"),
+                "open": d.get("Open", 0),
+                "close": d.get("Close", 0),
+                "high": d.get("High", 0),
+                "low": d.get("Low", 0),
+                "avgVolume": d.get("AvgVolume", 0),
+                "maxVolume": d.get("MaxVolume", 0)
+            })
+
+    return jsonify(result)
+
+# Route untuk halaman yfinance tahunan
+@app.route('/yfinance/tahunan')
+def yfinance_tahunan():
+    return render_template('yfinance/tahunan.html', active_page='yfinance')
+
+# API untuk mendapatkan daftar ticker yang tersedia untuk data tahunan
+@app.route("/api/tickers/tahunan")
+def get_tickers_tahunan():
+    tickers = collection_yfinance_tahunan.distinct("ticker")
+    return jsonify(tickers)
+
+# API untuk mendapatkan data saham tahunan berdasarkan ticker
+@app.route("/api/stock/tahunan/<ticker>")
+def get_stock_data_tahunan(ticker):
+    data = collection_yfinance_tahunan.find(
+        {"ticker": ticker},
+        {
+            "_id": 0,
+            "Bulan": 1,
+            "Open": 1,
+            "Close": 1,
+            "Low": 1,
+            "High": 1,
+            "AvgVolume": 1,
+            "MaxVolume": 1
+        }
+    ).sort("Bulan", 1)
+
+    result = []
+    for d in data:
+        result.append({
+            "Bulan": d.get("Bulan", ""),
+            "open": d.get("Open", 0),
+            "close": d.get("Close", 0),
+            "high": d.get("High", 0),
+            "low": d.get("Low", 0),
+            "avgVolume": d.get("AvgVolume", 0),
+            "maxVolume": d.get("MaxVolume", 0)
+        })
+
+    return jsonify(result)
 
 @app.route('/market_news')
 def market_news():

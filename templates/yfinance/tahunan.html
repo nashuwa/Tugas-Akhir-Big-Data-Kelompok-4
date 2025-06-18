@@ -1,0 +1,77 @@
+{% extends 'index.html' %}
+
+{% block content %}
+    <h2>Grafik Tahunan Saham</h2>
+    
+    <label for="tickerSelect">Pilih Ticker:</label>
+    <select id="tickerSelect"></select>
+
+    <canvas id="chartCanvas" height="300"></canvas>
+
+    <script>
+        async function loadTickers() {
+            const res = await fetch('/api/tickers/tahunan');
+            const tickers = await res.json();
+            const select = document.getElementById('tickerSelect');
+            tickers.forEach(ticker => {
+                const opt = document.createElement('option');
+                opt.value = ticker;
+                opt.text = ticker;
+                select.appendChild(opt);
+            });
+            if (tickers.length > 0) {
+                select.value = tickers[0];
+                loadChartData(tickers[0]);
+            }
+        }
+
+        async function loadChartData(ticker) {
+            const res = await fetch(`/api/stock/tahunan/${ticker}`);
+            const data = await res.json();
+
+            const labels = data.map(d => d.Bulan);
+            const open = data.map(d => d.open);
+            const close = data.map(d => d.close);
+            const high = data.map(d => d.high);
+            const low = data.map(d => d.low);
+            const avgVolume = data.map(d => d.avgVolume);
+            const maxVolume = data.map(d => d.maxVolume);
+
+            const ctx = document.getElementById('chartCanvas').getContext('2d');
+            if (window.chartInstance) window.chartInstance.destroy();
+
+            window.chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Open', data: open, backgroundColor: 'rgba(75, 192, 192, 0.5)' },
+                        { label: 'Close', data: close, backgroundColor: 'rgba(153, 102, 255, 0.5)' },
+                        { label: 'High', data: high, backgroundColor: 'rgba(255, 206, 86, 0.5)' },
+                        { label: 'Low', data: low, backgroundColor: 'rgba(255, 99, 132, 0.5)' },
+                        { label: 'Avg Volume', data: avgVolume, type: 'line', borderColor: 'black', borderWidth: 2, fill: false },
+                        { label: 'Max Volume', data: maxVolume, type: 'line', borderColor: 'gray', borderWidth: 2, fill: false }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Tahun' }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Nilai' }
+                        }
+                    }
+                }
+            });
+        }
+
+        document.getElementById('tickerSelect').addEventListener('change', function () {
+            loadChartData(this.value);
+        });
+
+        loadTickers();
+    </script>
+{% endblock %}
