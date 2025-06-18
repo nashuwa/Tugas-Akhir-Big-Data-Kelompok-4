@@ -1,7 +1,7 @@
 import os
 from flask import Flask, jsonify, render_template, request
 # from pymongo import MongoClient
-from dbconfig import collection_yfinance_5tahun, collection_yfinance_3tahun, collection_yfinance_1tahun, collection_yfinance_tahunan, collection_yfinance_bulanan, collection_yfinance_mingguan, collection_yfinance_harian, collection_idx, collection_market_news
+from dbconfig import collection_yfinance_5tahun, collection_yfinance_3tahun, collection_yfinance_1tahun, collection_yfinance_tahunan, collection_yfinance_bulanan, collection_yfinance_mingguan, collection_yfinance_harian, collection_idx, collection_market_news, collection_stock_news
 from bson.json_util import dumps
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
@@ -899,27 +899,104 @@ def market_news():
 
 @app.route("/api/market_news")
 def get_market_news():
-    # Ambil data dari MongoDB, tanpa _id, diurutkan dari tanggal terbaru
-    data = collection_market_news.find(
+    query = request.args.get("q", "")
+    
+    # Filter hanya data yang punya ringkasan
+    match_stage = {
+        "ringkasan": {"$exists": True, "$ne": None}
+    }
+
+    # Jika ada query pencarian, tambahkan filter pencarian
+    if query:
+        regex = {"$regex": query, "$options": "i"}
+        match_stage["$or"] = [
+            {"judul": regex},
+            {"konten": regex},
+            {"ringkasan": regex}
+        ]
+
+    # Pipeline aggregasi untuk hapus duplikat berdasarkan link
+    pipeline = [
+        {"$match": match_stage},
         {
-            "_id": 0,
-            "judul": 1,
-            "tanggal_artikel": 1,
-            "link": 1,
-            "ringkasan": 1
-        }
-    ).sort("tanggal_artikel", -1)
+            "$group": {
+                "_id": "$link",  # unik berdasarkan link
+                "judul": {"$first": "$judul"},
+                "tanggal_artikel": {"$first": "$tanggal_artikel"},
+                "ringkasan": {"$first": "$ringkasan"},
+                "waktu": {"$first": "$waktu"},
+                "link": {"$first": "$link"}
+            }
+        },
+        {"$sort": {"tanggal_artikel": -1}}
+    ]
 
-    # Ubah ke list dan return sebagai JSON
-    return jsonify({
-        "data": dumps(data)  # Menggunakan dumps untuk mengubah BSON ke JSON
-    })
+    berita = list(collection_market_news.aggregate(pipeline))
+    return jsonify(berita)
 
-@app.route("/api/test")
-def test_data():
-    data = list(collection_market_news.find())
-    print(data)  # buat debug di terminal
-    return jsonify(data)
+# Detail satu berita
+@app.route("/market_news/<judul>")
+def market_news_detail(judul):
+    data = collection_market_news.find_one({"judul": judul})
+    if not data:
+        return "Berita tidak ditemukan", 404
+    return render_template("iqplus/market_detail.html", berita=data)
+
+
+@app.route('/stock_news')
+def stock_news():
+    return render_template('iqplus/stock.html', active_page='stock_news')
+
+@app.route("/api/stock_news")
+def get_stock_news():
+    query = request.args.get("q", "")
+    
+    # Filter hanya data yang punya ringkasan
+    match_stage = {
+        "ringkasan": {"$exists": True, "$ne": None}
+    }
+
+    # Jika ada query pencarian, tambahkan filter pencarian
+    if query:
+        regex = {"$regex": query, "$options": "i"}
+        match_stage["$or"] = [
+            {"judul": regex},
+            {"konten": regex},
+            {"ringkasan": regex}
+        ]
+
+    # Pipeline aggregasi untuk hapus duplikat berdasarkan link
+    pipeline = [
+        {"$match": match_stage},
+        {
+            "$group": {
+                "_id": "$link",  # unik berdasarkan link
+                "judul": {"$first": "$judul"},
+                "tanggal_artikel": {"$first": "$tanggal_artikel"},
+                "ringkasan": {"$first": "$ringkasan"},
+                "waktu": {"$first": "$waktu"},
+                "link": {"$first": "$link"}
+            }
+        },
+        {"$sort": {"tanggal_artikel": -1}}
+    ]
+
+    berita = list(collection_stock_news.aggregate(pipeline))
+    return jsonify(berita)
+
+# Detail satu berita
+@app.route("/stock_news/<judul>")
+def stock_news_detail(judul):
+    data = collection_stock_news.find_one({"judul": judul})
+    if not data:
+        return "Berita tidak ditemukan", 404
+    return render_template("iqplus/stock_detail.html", berita=data)
+
+# @app.route("/api/test")
+# def test_data():
+#     data = list(collection_market_news.find())
+#     print(data)  # buat debug di terminal
+#     return jsonify(data)
 
 # Jalankan Flask
 if __name__ == "__main__":
