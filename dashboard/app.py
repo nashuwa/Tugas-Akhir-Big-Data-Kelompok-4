@@ -1,3 +1,4 @@
+import os
 from flask import Flask, jsonify, render_template
 # from pymongo import MongoClient
 from db import collection_yfinance, collection_idx, collection_market_news
@@ -628,4 +629,6 @@ def get_market_news():
 
 # Jalankan Flask
 if __name__ == "__main__":
-    app.run(debug=True)
+    # app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
