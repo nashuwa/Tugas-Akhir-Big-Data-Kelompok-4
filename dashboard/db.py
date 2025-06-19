@@ -7,5 +7,5 @@ client = MongoClient("mongodb+srv://bigdatakecil:bigdata04@xtrahera.m7x7qad.mong
 db = client["tugas_bigdata"]
 
 # Akses koleksi
-collection_idx = db["idx_transform"]
+collection_idx = db["idx_transformed_data"]
 collection_yfinance = db["yfinance_data_lima_tahun"]

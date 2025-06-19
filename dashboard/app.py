@@ -43,8 +43,14 @@ def get_top_revenue():
     # Ambil parameter tahun dari query string, default ke 2021 jika tidak ada
     year = int(request.args.get('year', 2021))
     
+    # Dictionary untuk mapping sektor
+    sector_mapping = {
+        '1. Agriculture': 'D. Consumer Non-Cyclicals',
+        '2. Mining': 'A. Energy',
+        # ... (kode mapping sektor lainnya)
+    }
+    
     # Ambil 5 emiten dengan revenue tertinggi berdasarkan current_year
-    # Tambahkan pipeline aggregation untuk menghindari duplikasi
     pipeline = [
         {"$match": {
             "revenue.current_year": {"$exists": True, "$ne": None},
@@ -74,13 +80,21 @@ def get_top_revenue():
     
     top_emiten = list(collection_idx.aggregate(pipeline))
     
+    # Terapkan mapping sektor untuk hasil
+    for item in top_emiten:
+        if item['sector'] in sector_mapping:
+            item['original_sector'] = item['sector']
+            item['sector'] = sector_mapping[item['sector']]
+    
     # Mendapatkan daftar tahun unik untuk dropdown
     distinct_years = sorted(collection_idx.distinct("reporting_year"))
     
     return jsonify({
         "data": top_emiten,
         "years": distinct_years
-})
+    })
+
+
 @app.route('/idx/financial-ratios')
 def idx_financial_ratios():
     return render_template('idx/financial_ratios.html', active_page='idx')
@@ -147,6 +161,24 @@ def get_top_profit():
     # Ambil parameter tahun dari query string, default ke 2021 jika tidak ada
     year = int(request.args.get('year', 2021))
     
+    # Dictionary untuk mapping sektor
+    sector_mapping = {
+        '1. Agriculture': 'D. Consumer Non-Cyclicals',
+        '2. Mining': 'A. Energy',
+        '3. Basic Industry And Chemicals': 'B. Basic Materials',
+        '4. Miscellaneous Industry': 'C. Industrials',
+        '5. Consumer Goods Industry': 'D. Consumer Non-Cyclicals',
+        '6. Property, Real Estate And Building Construction': 'H. Properties & Real Estate',
+        '7. Infrastructure, Utilities And Transportation': 'J. Infrastructures',
+        '8. Finance': 'G. Financials',
+        '9. Trade, Services & Investment': 'E. Consumer Cyclicals',
+        'B. Basic Materials': 'B. Basic Materials',
+        'D. Consumer Non-Cyclicals': 'D. Consumer Non-Cyclicals',
+        'E. Consumer Cyclicals': 'E. Consumer Cyclicals',
+        'I. Technology': 'I. Technology',
+        'J. Infrastructures': 'J. Infrastructures'
+    }
+    
     # Ambil 5 emiten dengan net profit tertinggi berdasarkan current_year
     pipeline = [
         {"$match": {
@@ -177,6 +209,12 @@ def get_top_profit():
     
     top_profit = list(collection_idx.aggregate(pipeline))
     
+    # Terapkan mapping sektor untuk hasil
+    for item in top_profit:
+        if item['sector'] in sector_mapping:
+            item['original_sector'] = item['sector']
+            item['sector'] = sector_mapping[item['sector']]
+    
     # Mendapatkan daftar tahun unik untuk dropdown
     distinct_years = sorted(collection_idx.distinct("reporting_year"))
     
@@ -184,11 +222,6 @@ def get_top_profit():
         "data": top_profit,
         "years": distinct_years
     })
-
-# Route untuk halaman komposisi aset dan ekuitas
-@app.route('/idx/asset-equity')
-def idx_asset_equity():
-    return render_template('idx/asset_equity_composition.html', active_page='idx')
 
 # Route untuk halaman komposisi aset dan ekuitas
 @app.route('/idx/asset-equity')

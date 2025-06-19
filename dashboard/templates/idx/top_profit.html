@@ -3,7 +3,7 @@
 {% block content %}
   <!-- Main Content -->
   <main class="flex-1 p-8 overflow-auto">
-    <div class="">
+    <div class="mb-12">
       <h2 class="text-2xl font-semibold text-gray-800 mb-4">Top 5 Emiten dengan Net Profit (Laba Bersih) Tertinggi</h2>
 
       <!-- Filter Tahun -->
@@ -55,6 +55,53 @@
         <p class="text-gray-500 text-lg">Tidak ada data tersedia untuk tahun yang dipilih</p>
       </div>
     </div>
+
+    <!-- Heatmap Section -->
+    <div class="mt-12">
+      <h2 class="text-2xl font-semibold text-gray-800 mb-4">Peta Panas (Heatmap) Pertumbuhan Laba Bersih per Sektor</h2>
+
+      <div class="text-gray-600 mb-6">
+        <p>Visualisasi pertumbuhan laba bersih untuk setiap sektor dari tahun ke tahun. Memungkinkan Anda dengan cepat mengidentifikasi sektor mana yang mengalami pertumbuhan laba bersih paling signifikan atau sebaliknya.</p>
+      </div>
+
+      <!-- Loading spinner untuk heatmap -->
+      <div id="heatmapLoading" class="flex justify-center items-center h-64">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-500"></div>
+      </div>
+
+      <!-- Heatmap Container -->
+      <div id="heatmap-container" class="hidden">
+        <div id="heatmap" class="w-full overflow-x-auto pb-4">
+          <!-- Heatmap akan dirender di sini -->
+          <div id="heatmapChart" class="min-w-[800px] min-h-[400px]"></div>
+        </div>
+        
+        <div class="mt-4 flex justify-center">
+          <div class="flex items-center">
+            <span class="text-xs text-gray-600 mr-2">Pertumbuhan rendah</span>
+            <div class="flex h-4">
+              <div class="w-6 h-4 bg-red-700"></div>
+              <div class="w-6 h-4 bg-red-500"></div>
+              <div class="w-6 h-4 bg-red-300"></div>
+              <div class="w-6 h-4 bg-gray-200"></div>
+              <div class="w-6 h-4 bg-green-300"></div>
+              <div class="w-6 h-4 bg-green-500"></div>
+              <div class="w-6 h-4 bg-green-700"></div>
+            </div>
+            <span class="text-xs text-gray-600 ml-2">Pertumbuhan tinggi</span>
+          </div>
+        </div>
+
+        <div class="text-sm text-gray-500 mt-4 text-center">
+          <p>* Nilai menunjukkan rata-rata pertumbuhan laba bersih (%) untuk setiap sektor per tahun</p>
+        </div>
+      </div>
+
+      <!-- No Heatmap Data Message -->
+      <div id="no-heatmap-data" class="hidden text-center py-10">
+        <p class="text-gray-500 text-lg">Tidak ada data pertumbuhan laba bersih per sektor tersedia</p>
+      </div>
+    </div>
   </main>
 
   <script>
@@ -92,17 +139,18 @@
       return sign + number.toFixed(2) + '%';
     }
 
-    // Warna untuk grafik dengan gradien hijau untuk profit positif
+    // Warna untuk grafik dengan berbagai gradasi biru
     const chartColors = [
-      'rgba(16, 185, 129, 0.8)',  // Green primary
-      'rgba(5, 150, 105, 0.8)',   // Green darker
-      'rgba(4, 120, 87, 0.8)',    // Green darkest
-      'rgba(52, 211, 153, 0.8)',  // Green lighter
-      'rgba(110, 231, 183, 0.8)'  // Green lightest
+      'rgba(54, 162, 235, 0.8)',   // Blue primary
+      'rgba(54, 162, 235, 0.8)',   // Dodger blue
+      'rgba(54, 162, 235, 0.8)',   // Royal blue
+      'rgba(54, 162, 235, 0.8)',      // Pure blue
+      'rgba(54, 162, 235, 0.8)'     // Midnight blue
     ];
 
     // Variable untuk menyimpan instance chart
     let profitChart = null;
+    let heatmapChart = null;
 
     // Tahun terpilih
     let selectedYear = 2021;
@@ -224,8 +272,7 @@
                 },
                 afterLabel: function(context) {
                   const index = context.dataIndex;
-                  const item = data[index];
-                  if (item.net_profit.growth_rate_percent != null) {
+                  const item = data[index];                  if (item.net_profit.growth_rate_percent != null) {
                     const sign = item.net_profit.growth_rate_percent >= 0 ? '+' : '';
                     return `Pertumbuhan: ${sign}${item.net_profit.growth_rate_percent.toFixed(2)}%`;
                   }
@@ -272,6 +319,254 @@
       });
     }
 
+    // Fungsi untuk memuat data heatmap
+    async function loadHeatmapData() {
+      try {
+        // Tampilkan loading spinner
+        document.getElementById('heatmapLoading').classList.remove('hidden');
+        document.getElementById('heatmap-container').classList.add('hidden');
+        document.getElementById('no-heatmap-data').classList.add('hidden');
+        
+        const response = await fetch('/api/profit-growth-heatmap');
+        const result = await response.json();
+        
+        if (result && result.data && result.data.length > 0) {
+          renderHeatmap(result);
+          document.getElementById('heatmap-container').classList.remove('hidden');
+        } else {
+          document.getElementById('no-heatmap-data').classList.remove('hidden');
+        }
+        
+        // Sembunyikan loading spinner
+        document.getElementById('heatmapLoading').classList.add('hidden');
+        
+      } catch (error) {
+        console.error('Error fetching heatmap data:', error);
+        document.getElementById('heatmapLoading').classList.add('hidden');
+        document.getElementById('no-heatmap-data').classList.remove('hidden');
+        document.getElementById('no-heatmap-data').innerHTML = '<p class="text-center text-red-500">Gagal memuat data pertumbuhan sektor</p>';
+      }
+    }
+
+    // Fungsi untuk membuat heatmap
+    function renderHeatmap(data) {
+      const heatmapElement = document.getElementById('heatmapChart');
+      heatmapElement.innerHTML = '';
+      
+      // Buat tabel untuk heatmap
+      const table = document.createElement('table');
+      table.className = 'min-w-full border-collapse';
+      
+      // Buat header tabel dengan tahun
+      const thead = document.createElement('thead');
+      const headerRow = document.createElement('tr');
+      
+      // Cell kosong di kiri atas
+      const cornerCell = document.createElement('th');
+      cornerCell.className = 'bg-gray-100 border border-gray-300 p-3 text-left';
+      cornerCell.innerText = 'Sektor / Tahun';
+      headerRow.appendChild(cornerCell);
+      
+      // Header tahun
+      data.years.forEach(year => {
+        const th = document.createElement('th');
+        th.className = 'bg-gray-100 border border-gray-300 p-3';
+        th.innerText = year;
+        headerRow.appendChild(th);
+      });
+      
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+      
+      // Normalisasi data untuk skala warna yang lebih seimbang
+      // Cari nilai minimum dan maksimum untuk menentukan skala warna
+      let minValue = 0;
+      let maxValue = 0;
+      
+      // Kumpulkan semua nilai non-null
+      const allValues = [];
+      data.data.forEach(row => {
+        data.years.forEach(year => {
+          const value = row[year];
+          if (value !== null) {
+            allValues.push(value);
+            if (value < minValue) minValue = value;
+            if (value > maxValue) maxValue = value;
+          }
+        });
+      });
+      
+      // Gunakan persentil untuk batasan nilai ekstrem
+      allValues.sort((a, b) => a - b);
+      const lowerLimit = allValues[Math.floor(allValues.length * 0.05)] || -30; // 5th percentile
+      const upperLimit = allValues[Math.floor(allValues.length * 0.95)] || 30;  // 95th percentile
+      
+      // Buat body tabel dengan data heatmap
+      const tbody = document.createElement('tbody');
+      
+      data.data.forEach(row => {
+        const tr = document.createElement('tr');
+        
+        // Nama sektor
+        const th = document.createElement('th');
+        th.className = 'bg-gray-50 border border-gray-300 p-3 text-left font-medium';
+        th.innerText = row.sector;
+        tr.appendChild(th);
+        
+        // Nilai untuk setiap tahun
+        data.years.forEach(year => {
+          const td = document.createElement('td');
+          td.className = 'border border-gray-300 p-3 text-center relative';
+          
+          const value = row[year];
+          if (value !== null) {
+            // Tentukan warna berdasarkan nilai (dengan batasan nilai ekstrem)
+            let bgColor = getHeatmapColor(value, lowerLimit, upperLimit);
+            td.style.backgroundColor = bgColor;
+            
+            // Tambahkan class untuk nilai ekstrem
+            if (value <= lowerLimit || value >= upperLimit) {
+              td.classList.add('font-bold');
+            }
+            
+            // Style teks dengan warna yang lebih kontras & mudah dibaca
+            const textColor = getTextColor(bgColor);
+            td.style.color = textColor;
+            
+            td.innerText = formatPercentage(value);
+          } else {
+            td.className += ' bg-gray-100 text-gray-400';
+            td.innerText = 'N/A';
+          }
+          
+          tr.appendChild(td);
+        });
+        
+        tbody.appendChild(tr);
+      });
+      
+      table.appendChild(tbody);
+      heatmapElement.appendChild(table);
+      
+      // Tambahkan legenda yang lebih detail
+      addDetailedLegend(heatmapElement, lowerLimit, upperLimit);
+    }
+
+    // Fungsi untuk menambahkan legenda yang lebih detail
+    function addDetailedLegend(container, lowerLimit, upperLimit) {
+      const legendDiv = document.createElement('div');
+      legendDiv.className = 'mt-6 flex flex-col items-center';
+      
+      // Tambahkan judul legenda
+      const legendTitle = document.createElement('p');
+      legendTitle.className = 'text-sm font-medium text-gray-700 mb-2';
+      legendTitle.innerText = 'Legenda Pertumbuhan Laba Bersih (%)';
+      legendDiv.appendChild(legendTitle);
+      
+      // Buat gradient bar
+      const gradientBar = document.createElement('div');
+      gradientBar.className = 'flex w-3/4 max-w-3xl h-6 rounded-md overflow-hidden mb-1';
+      
+      // Buat gradient dengan transisi warna yang lebih halus
+      const gradientSteps = 10;
+      const negativeColors = ['#7f1d1d', '#991b1b', '#b91c1c', '#dc2626', '#ef4444', '#f87171', '#fca5a5'];
+      const neutralColor = '#e5e7eb';
+      const positiveColors = ['#a7f3d0', '#6ee7b7', '#34d399', '#10b981', '#059669', '#047857', '#065f46'];
+        // Buat gradient bar untuk nilai negatif
+      for (let i = 0; i < negativeColors.length; i++) {
+        const step = document.createElement('div');
+        step.style.backgroundColor = negativeColors[i];
+        step.style.width = `${100 / (negativeColors.length * 2 + 1)}%`;
+        gradientBar.appendChild(step);
+      }
+        // Warna netral di tengah
+      const neutralStep = document.createElement('div');
+      neutralStep.style.backgroundColor = neutralColor;
+      neutralStep.style.width = `${100 / (negativeColors.length * 2 + 1)}%`;
+      gradientBar.appendChild(neutralStep);
+        // Buat gradient bar untuk nilai positif
+      for (let i = 0; i < positiveColors.length; i++) {
+        const step = document.createElement('div');
+        step.style.backgroundColor = positiveColors[i];
+        step.style.width = `${100 / (negativeColors.length * 2 + 1)}%`;
+        gradientBar.appendChild(step);
+      }
+      
+      legendDiv.appendChild(gradientBar);
+      
+      // Tambahkan label skala
+      const scaleDiv = document.createElement('div');
+      scaleDiv.className = 'flex justify-between w-3/4 max-w-3xl text-xs text-gray-600';
+        const leftLabel = document.createElement('span');
+      leftLabel.innerText = `≤ ${lowerLimit.toFixed(0)}%`;
+      scaleDiv.appendChild(leftLabel);
+      
+      const midLabels = ['-30%', '-15%', '0%', '+15%', '+30%'];
+      for (let i = 0; i < midLabels.length; i++) {
+        const midLabel = document.createElement('span');
+        midLabel.innerText = midLabels[i];
+        scaleDiv.appendChild(midLabel);
+      }
+        const rightLabel = document.createElement('span');
+      rightLabel.innerText = `≥ ${upperLimit.toFixed(0)}%`;
+      scaleDiv.appendChild(rightLabel);
+      
+      legendDiv.appendChild(scaleDiv);
+      
+      // Tambahkan catatan untuk nilai ekstrem
+      const noteDiv = document.createElement('div');
+      noteDiv.className = 'mt-2 text-xs text-gray-500';
+      noteDiv.innerHTML = `
+        <p>* Nilai menunjukkan rata-rata pertumbuhan laba bersih (%) untuk setiap sektor per tahun</p>
+        <p>* Nilai yang ditampilkan dalam <strong>teks tebal</strong> menunjukkan nilai ekstrem (≤ ${lowerLimit.toFixed(0)}% atau ≥ ${upperLimit.toFixed(0)}%)</p>
+      `;
+      legendDiv.appendChild(noteDiv);
+      
+      container.appendChild(legendDiv);
+    }
+
+    // Fungsi untuk mendapatkan warna berdasarkan nilai pertumbuhan dengan skala yang lebih seimbang
+    function getHeatmapColor(value, lowerLimit, upperLimit) {
+      // Normalize extreme values
+      const normalizedValue = Math.max(lowerLimit, Math.min(upperLimit, value));
+      
+      // Create color gradients more evenly distributed
+      if (normalizedValue < 0) {
+        // Negative values - Red gradient
+        const intensity = Math.min(1, Math.abs(normalizedValue) / Math.abs(lowerLimit));
+          // Interpolate between light red and dark red
+        const r = Math.floor(255 - (100 * intensity)); // From 255 to 155
+        const g = Math.floor(200 - (160 * intensity)); // From 200 to 40
+        const b = Math.floor(200 - (160 * intensity)); // From 200 to 40
+        
+        return `rgb(${r}, ${g}, ${b})`;
+      } else if (normalizedValue === 0) {
+        // Zero value - Neutral grey
+        return 'rgb(229, 231, 235)';
+      } else {
+        // Positive values - Green gradient
+        const intensity = Math.min(1, normalizedValue / upperLimit);
+          // Interpolate between light green and dark green
+        const r = Math.floor(200 - (140 * intensity)); // From 200 to 60
+        const g = Math.floor(230 - (70 * intensity));  // From 230 to 160
+        const b = Math.floor(200 - (140 * intensity)); // From 200 to 60
+        
+        return `rgb(${r}, ${g}, ${b})`;
+      }
+    }
+
+    // Fungsi untuk menentukan warna teks yang kontras dengan background
+    function getTextColor(backgroundColor) {
+      // Extract RGB components
+      const rgb = backgroundColor.match(/\d+/g).map(Number);
+      
+      // Calculate luminance using common formula
+      const luminance = (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) / 255;
+      
+      // Return white for dark backgrounds, black for light backgrounds
+      return luminance > 0.5 ? '#000000' : '#ffffff';
+    }
+
     // Event listener untuk tombol filter
     document.getElementById('applyFilter').addEventListener('click', function() {
       const year = parseInt(document.getElementById('yearFilter').value);
@@ -283,6 +578,7 @@
     window.onload = function() {
       loadYearOptions();
       loadData(selectedYear);
+      loadHeatmapData();
     };
   </script>
-{% endblock %}
+{% endblock %}
