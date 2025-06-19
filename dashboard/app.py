@@ -185,6 +185,116 @@ def get_top_profit():
         "years": distinct_years
     })
 
+# Route untuk halaman komposisi aset dan ekuitas
+@app.route('/idx/asset-equity')
+def idx_asset_equity():
+    return render_template('idx/asset_equity_composition.html', active_page='idx')
+
+# Route untuk halaman komposisi aset dan ekuitas
+@app.route('/idx/asset-equity')
+def idx_asset_equity():
+    return render_template('idx/asset_equity_composition.html', active_page='idx')
+
+# API untuk mendapatkan data komposisi aset dan ekuitas per sektor
+@app.route("/api/asset-equity-composition")
+def get_asset_equity_composition():
+    # Ambil parameter tahun dari query string
+    year = int(request.args.get('year', 2021))
+    
+    # Dictionary untuk mapping sektor
+    sector_mapping = {
+        '1. Agriculture': 'D. Consumer Non-Cyclicals',
+        '2. Mining': 'A. Energy',
+        '3. Basic Industry And Chemicals': 'B. Basic Materials',
+        '4. Miscellaneous Industry': 'C. Industrials',
+        '5. Consumer Goods Industry': 'D. Consumer Non-Cyclicals',
+        '6. Property, Real Estate And Building Construction': 'H. Properties & Real Estate',
+        '7. Infrastructure, Utilities And Transportation': 'J. Infrastructures',
+        '8. Finance': 'G. Financials',
+        '9. Trade, Services & Investment': 'E. Consumer Cyclicals',
+        'B. Basic Materials': 'B. Basic Materials',
+        'D. Consumer Non-Cyclicals': 'D. Consumer Non-Cyclicals',
+        'E. Consumer Cyclicals': 'E. Consumer Cyclicals',
+        'I. Technology': 'I. Technology',
+        'J. Infrastructures': 'J. Infrastructures'
+    }
+    
+    # Aggregate pipeline untuk menghitung total aset dan ekuitas per sektor
+    pipeline = [
+        {"$match": {
+            "assets.current_year": {"$exists": True, "$ne": None},
+            "equity.current_year": {"$exists": True, "$ne": None},
+            "reporting_year": year
+        }},
+        # Group berdasarkan sektor untuk menghitung total
+        {"$group": {
+            "_id": "$sector",
+            "total_assets": {"$sum": "$assets.current_year"},
+            "total_equity": {"$sum": "$equity.current_year"},
+            "count": {"$sum": 1}
+        }},
+        # Urutkan berdasarkan total aset
+        {"$sort": {"total_assets": -1}},
+        # Restruktur output
+        {"$project": {
+            "_id": 0,
+            "sector": "$_id",
+            "total_assets": 1,
+            "total_equity": 1,
+            "count": 1
+        }}
+    ]
+    
+    sector_data = list(collection_idx.aggregate(pipeline))
+    
+    # Mendapatkan daftar tahun unik untuk dropdown
+    distinct_years = sorted(collection_idx.distinct("reporting_year"))
+    
+    # Menerapkan mapping sektor dan menggabungkan data dengan sektor yang sama
+    mapped_sector_data = {}
+    
+    for sector_info in sector_data:
+        sector = sector_info['sector']
+        # Map sektor jika ada dalam mapping
+        if sector in sector_mapping:
+            mapped_sector = sector_mapping[sector]
+        else:
+            mapped_sector = sector
+        
+        # Jika sektor yang dimapping sudah ada, tambahkan datanya
+        if mapped_sector in mapped_sector_data:
+            mapped_sector_data[mapped_sector]['total_assets'] += sector_info['total_assets']
+            mapped_sector_data[mapped_sector]['total_equity'] += sector_info['total_equity']
+            mapped_sector_data[mapped_sector]['count'] += sector_info['count']
+        else:
+            # Jika belum ada, inisialisasi dengan data sektor ini
+            mapped_sector_data[mapped_sector] = {
+                'sector': mapped_sector,
+                'total_assets': sector_info['total_assets'],
+                'total_equity': sector_info['total_equity'],
+                'count': sector_info['count']
+            }
+    
+    # Mengkonversi kembali ke list untuk diurutkan
+    result_data = list(mapped_sector_data.values())
+    # Urutkan hasil berdasarkan total aset
+    result_data.sort(key=lambda x: x['total_assets'], reverse=True)
+    
+    # Hitung rasio equity to assets untuk setiap sektor
+    for sector in result_data:
+        if sector['total_assets'] > 0:
+            sector['equity_to_assets_ratio'] = round(sector['total_equity'] / sector['total_assets'] * 100, 2)
+            sector['debt_to_assets_ratio'] = round(100 - sector['equity_to_assets_ratio'], 2)
+        else:
+            sector['equity_to_assets_ratio'] = 0
+            sector['debt_to_assets_ratio'] = 0
+    
+    return jsonify({
+        "data": result_data,
+        "years": distinct_years
+    })
+
+
 # API untuk mendapatkan daftar tahun yang tersedia
 @app.route("/api/available-years")
 def get_available_years():
