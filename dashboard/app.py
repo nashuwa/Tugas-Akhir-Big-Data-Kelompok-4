@@ -155,6 +155,99 @@ def get_top_growth():
         "years": distinct_years
 })
 
+
+# API untuk mendapatkan data heatmap pertumbuhan laba bersih per sektor
+@app.route("/api/profit-growth-heatmap")
+def get_profit_growth_heatmap():
+    # Dictionary untuk mapping sektor
+    sector_mapping = {
+        '1. Agriculture': 'D. Consumer Non-Cyclicals',
+        '2. Mining': 'A. Energy',
+        '3. Basic Industry And Chemicals': 'B. Basic Materials',
+        '4. Miscellaneous Industry': 'C. Industrials',
+        '5. Consumer Goods Industry': 'D. Consumer Non-Cyclicals',
+        '6. Property, Real Estate And Building Construction': 'H. Properties & Real Estate',
+        '7. Infrastructure, Utilities And Transportation': 'J. Infrastructures',
+        '8. Finance': 'G. Financials',
+        '9. Trade, Services & Investment': 'E. Consumer Cyclicals',
+        'B. Basic Materials': 'B. Basic Materials',
+        'D. Consumer Non-Cyclicals': 'D. Consumer Non-Cyclicals',
+        'E. Consumer Cyclicals': 'E. Consumer Cyclicals',
+        'I. Technology': 'I. Technology',
+        'J. Infrastructures': 'J. Infrastructures'
+    }
+    
+    # Pipeline aggregation untuk menghitung rata-rata pertumbuhan net profit per sektor dan tahun
+    pipeline = [
+        {"$match": {
+            "net_profit.growth_rate_percent": {"$exists": True, "$ne": None}
+        }},
+        {"$group": {
+            "_id": {
+                "sector": "$sector",
+                "year": "$reporting_year"
+            },
+            "avg_growth": {"$avg": "$net_profit.growth_rate_percent"},
+            "count": {"$sum": 1}
+        }},
+        {"$sort": {"_id.year": 1, "_id.sector": 1}}
+    ]
+    
+    results = list(collection_idx.aggregate(pipeline))
+    
+    # Mendapatkan daftar unik sektor dan tahun
+    sectors = set()
+    years = set()
+    
+    for result in results:
+        sector = result["_id"]["sector"]
+        # Map sektor menggunakan dictionary mapping jika ada
+        if sector in sector_mapping:
+            mapped_sector = sector_mapping[sector]
+            sectors.add(mapped_sector)
+        else:
+            sectors.add(sector)
+        
+        years.add(result["_id"]["year"])
+    
+    # Konversi ke list dan urutkan
+    sectors_list = sorted(list(sectors))
+    years_list = sorted(list(years))
+    
+    # Membuat data untuk heatmap
+    heatmap_data = []
+    
+    for sector in sectors_list:
+        row_data = {"sector": sector}
+        
+        for year in years_list:
+            # Cari data pertumbuhan untuk sektor dan tahun ini
+            found = False
+            for result in results:
+                result_sector = result["_id"]["sector"]
+                result_year = result["_id"]["year"]
+                
+                # Cek apakah perlu dipetakan
+                if result_sector in sector_mapping:
+                    result_sector = sector_mapping[result_sector]
+                
+                if result_sector == sector and result_year == year:
+                    row_data[str(year)] = round(result["avg_growth"], 2)
+                    found = True
+                    break
+            
+            # Jika tidak ada data, isi dengan null
+            if not found:
+                row_data[str(year)] = None
+        
+        heatmap_data.append(row_data)
+    
+    return jsonify({
+        "sectors": sectors_list,
+        "years": years_list,
+        "data": heatmap_data
+    })
+
 # API untuk mendapatkan top 5 emiten berdasarkan net profit
 @app.route("/api/top-profit")
 def get_top_profit():
